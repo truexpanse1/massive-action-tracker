@@ -5,7 +5,8 @@ import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { View, User, Role, DayData, Transaction, Contact, Quote, NewClient, CalendarEvent, getInitialDayData, UserStatus, EODSubmissions } from './types';
 
 // Page Components
-import LandingPage from './pages/LandingPage';
+import LandingPage from "../pages/LandingPage";
+
 import Header from './components/Header';
 import DayView from './pages/DayView';
 import ProspectingPage from './pages/ProspectingPage';
