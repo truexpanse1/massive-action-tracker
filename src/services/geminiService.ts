@@ -1,19 +1,24 @@
-// Using GoogleGenAI from '@google/genai' for Gemini models
+// Gemini service — shared Gemini client & helpers
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Quote, Book } from "../types";
 
-// Load Gemini API key from Vite environment variables
+// Load Gemini API key from Vite environment variable
+// WARNING: Do not share this key publicly.
 const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 
 // Optional: log / warn if missing (helps debug in Vercel)
 if (!geminiApiKey) {
-  console.warn(
-    "⚠️ Gemini API key is not set. Please add VITE_GEMINI_API_KEY to your Vercel environment."
-  );
+  console.warn(`
+****************************************************************
+** WARNING: Gemini API key is not set!
+** AI features may not work. Please set VITE_GEMINI_API_KEY in Vercel.
+****************************************************************
+  `);
 }
 
 // Create the Gemini client using the loaded key
-const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+const ai = new GoogleGenAI({ apiKey: geminiApiKey! });
+
 
 
 
