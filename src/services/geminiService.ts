@@ -1,22 +1,20 @@
-import { GoogleGenerativeAI, Type, Modality } from "@google/generative-ai";
+// Using GoogleGenAI from '@google/genai' for Gemini models
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Quote, Book } from "../types";
 
-// Load API key from Vite environment variables
-// WARNING: Do not share code with API keys.
-const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+// Load Gemini API key from Vite environment variables
+const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 
-// Warn if missing
+// Optional: log / warn if missing (helps debug in Vercel)
 if (!geminiApiKey) {
-  console.warn(`
-************************************************************
-** WARNING: Gemini API key is not set!
-** AI features may not work. Please set VITE_GEMINI_API_KEY.
-************************************************************
-  `);
+  console.warn(
+    "⚠️ Gemini API key is not set. Please add VITE_GEMINI_API_KEY to your Vercel environment."
+  );
 }
 
-// Create the Gemini client
-const ai = new GoogleGenerativeAI({ apiKey: geminiApiKey });
+// Create the Gemini client using the loaded key
+const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+
 
 
 
