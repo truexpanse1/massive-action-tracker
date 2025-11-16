@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import ContentTemplatesCard from '../components/ContentTemplatesCard';
 import { generateBusinessContent } from '../services/geminiService';
@@ -48,16 +47,41 @@ const templateFields: Record<string, { label: string; name: string; placeholder:
     ],
 };
 
+// Templates that should show a free-form description box
+const templatesRequiringDescription = [
+    'Mastermind Group invitation',
+    'Company News letter',
+    'Lesson Outline',
+    'Check list request',
+];
+
+const getDescriptionHelperText = (template: string): string => {
+    switch (template) {
+        case 'Mastermind Group invitation':
+            return 'Describe who the mastermind is for, the main promise, how often you meet, and any bonuses or commitments you want highlighted.';
+        case 'Company News letter':
+            return 'Describe this issue’s focus: your audience, main theme, key company updates, and any important calls to action.';
+        case 'Lesson Outline':
+            return 'Describe the lesson topic, audience (e.g., sales team, congregation, youth), time length, key points or scriptures, and what you want people to walk away with.';
+        case 'Check list request':
+            return 'Describe what the checklist is for (e.g., sermon prep, public talk, sales presentation, home visit, ministry event), the setting, and what “done” should look like.';
+        default:
+            return 'Add any details that will help the AI create exactly what you have in mind.';
+    }
+};
 
 const AIContentPage: React.FC = () => {
     const [selectedTemplate, setSelectedTemplate] = useState('Welcome Email');
     const [formDetails, setFormDetails] = useState<Record<string, string>>({});
+    const [description, setDescription] = useState('');
     const [generatedContent, setGeneratedContent] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const currentFields = useMemo(() => {
-        setFormDetails({}); 
+        // Reset fields whenever template changes
+        setFormDetails({});
+        setDescription('');
         return templateFields[selectedTemplate] || [];
     }, [selectedTemplate]);
 
@@ -70,7 +94,16 @@ const AIContentPage: React.FC = () => {
         setError(null);
         setGeneratedContent('');
         try {
-            const content = await generateBusinessContent(selectedTemplate, formDetails);
+            // Include description in payload for the templates that use it
+            const payload: Record<string, string> = {
+                ...formDetails,
+            };
+
+            if (templatesRequiringDescription.includes(selectedTemplate) && description.trim()) {
+                payload.description = description.trim();
+            }
+
+            const content = await generateBusinessContent(selectedTemplate, payload);
             setGeneratedContent(content);
         } catch (err) {
             console.error(err);
@@ -92,32 +125,94 @@ const AIContentPage: React.FC = () => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-8">
-                <ContentTemplatesCard selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} />
-                 <div className="bg-brand-light-card dark:bg-brand-navy p-4 rounded-lg border border-brand-light-border dark:border-brand-gray">
-                     <h3 className="text-lg font-bold mb-2 text-brand-light-text dark:text-white">Template Details</h3>
-                     <div className="space-y-4">
-                        {currentFields.length > 0 ? currentFields.map(field => (
-                            <div key={field.name}>
-                                <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-1">{field.label}</label>
-                                <input type="text" value={formDetails[field.name] || ''} onChange={e => handleInputChange(field.name, e.target.value)} placeholder={field.placeholder} className="w-full bg-transparent border-b-2 border-brand-light-border dark:border-brand-gray text-brand-light-text dark:text-white p-1 focus:outline-none focus:border-brand-blue" />
+                <ContentTemplatesCard
+                    selectedTemplate={selectedTemplate}
+                    setSelectedTemplate={setSelectedTemplate}
+                />
+                <div className="bg-brand-light-card dark:bg-brand-navy p-4 rounded-lg border border-brand-light-border dark:border-brand-gray">
+                    <h3 className="text-lg font-bold mb-2 text-brand-light-text dark:text-white">
+                        Template Details
+                    </h3>
+                    <div className="space-y-4">
+                        {currentFields.length > 0 ? (
+                            currentFields.map(field => (
+                                <div key={field.name}>
+                                    <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-1">
+                                        {field.label}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formDetails[field.name] || ''}
+                                        onChange={e => handleInputChange(field.name, e.target.value)}
+                                        placeholder={field.placeholder}
+                                        className="w-full bg-transparent border-b-2 border-brand-light-border dark:border-brand-gray text-brand-light-text dark:text-white p-1 focus:outline-none focus:border-brand-blue"
+                                    />
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-sm text-center text-gray-500 py-4">
+                                This template requires no structured fields. You can still add a description below to guide the AI.
+                            </p>
+                        )}
+
+                        {/* Description box for certain templates (mastermind, newsletter, lesson, checklist) */}
+                        {templatesRequiringDescription.includes(selectedTemplate) && (
+                            <div>
+                                <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-1">
+                                    Description of what to create
+                                </label>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                    {getDescriptionHelperText(selectedTemplate)}
+                                </p>
+                                <textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    rows={4}
+                                    className="w-full bg-transparent border border-brand-light-border dark:border-brand-gray rounded-md text-brand-light-text dark:text-white text-sm p-2 focus:outline-none focus:border-brand-blue"
+                                    placeholder="Type a clear description here (who it’s for, setting, key points, tone, etc.)..."
+                                />
                             </div>
-                        )) : <p className="text-sm text-center text-gray-500 py-4">This template requires no additional details. Just click generate!</p>}
-                         <button onClick={handleGenerate} disabled={isLoading} className="w-full bg-brand-red text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition disabled:bg-brand-gray">{isLoading ? 'Generating...' : 'Generate Content'}</button>
-                         {error && <p className="text-sm text-red-500 text-center">{error}</p>}
-                     </div>
-                 </div>
+                        )}
+
+                        <button
+                            onClick={handleGenerate}
+                            disabled={isLoading}
+                            className="w-full bg-brand-red text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition disabled:bg-brand-gray"
+                        >
+                            {isLoading ? 'Generating...' : 'Generate Content'}
+                        </button>
+                        {error && (
+                            <p className="text-sm text-red-500 text-center">
+                                {error}
+                            </p>
+                        )}
+                    </div>
+                </div>
             </div>
-             <div className="lg:col-span-2">
+
+            <div className="lg:col-span-2">
                 <div className="bg-brand-light-card dark:bg-brand-navy p-6 rounded-lg border border-brand-light-border dark:border-brand-gray">
                     <div className="flex justify-between items-center mb-4">
-                         <h2 className="text-xl font-bold text-brand-light-text dark:text-white">Generated Content</h2>
-                         <button onClick={handleCopy} disabled={!generatedContent || isLoading} className="text-xs bg-brand-blue text-white font-bold py-1 px-3 rounded-md hover:bg-blue-700 transition disabled:bg-brand-gray">Copy Text</button>
+                        <h2 className="text-xl font-bold text-brand-light-text dark:text-white">
+                            Generated Content
+                        </h2>
+                        <button
+                            onClick={handleCopy}
+                            disabled={!generatedContent || isLoading}
+                            className="text-xs bg-brand-blue text-white font-bold py-1 px-3 rounded-md hover:bg-blue-700 transition disabled:bg-brand-gray"
+                        >
+                            Copy Text
+                        </button>
                     </div>
                     <div className="w-full bg-brand-light-bg dark:bg-brand-ink border border-brand-light-border dark:border-brand-gray rounded-md p-4 min-h-[60vh] max-h-[80vh] overflow-y-auto">
                         {isLoading ? (
-                             <div className="flex justify-center items-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue"></div></div>
+                            <div className="flex justify-center items-center h-full">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue"></div>
+                            </div>
                         ) : (
-                            <pre className="text-sm text-brand-light-text dark:text-gray-300 whitespace-pre-wrap font-sans">{generatedContent || 'Your AI-generated content will appear here...'}</pre>
+                            <pre className="text-sm text-brand-light-text dark:text-gray-300 whitespace-pre-wrap font-sans">
+                                {generatedContent || 'Your AI-generated content will appear here...'}
+                            </pre>
                         )}
                     </div>
                 </div>
