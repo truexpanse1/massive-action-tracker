@@ -116,16 +116,28 @@ const DayView: React.FC<DayViewProps> = ({ allData, onDataChange, selectedDate, 
         }
     };
     
-    const handleGoalChange = (type: 'topTargets' | 'massiveGoals', updatedGoal: Goal, isCompletion: boolean) => {
-        const goals = (allData[currentDateKey] || getInitialDayData())[type];
-        const newGoals = goals.map(g => g.id === updatedGoal.id ? updatedGoal : g);
-        const updatedData = { ...(allData[currentDateKey] || getInitialDayData()), [type]: newGoals };
-        onDataChange(currentDateKey, updatedData);
+ const handleGoalChange = (
+    type: 'topTargets' | 'massiveGoals',
+    updatedGoal: Goal,
+    isCompletion: boolean
+) => {
+    // Use the goals for the current day that are already in memory
+    const goals = currentData[type] || [];
 
-        if (isCompletion && updatedGoal.text.trim() !== '') {
-            onAddWin(currentDateKey, `Target Completed: ${updatedGoal.text}`);
-        }
-    };
+    // Replace just the one goal we updated
+    const newGoals = goals.map(g =>
+        g.id === updatedGoal.id ? updatedGoal : g
+    );
+
+    // Persist the change for this day
+    updateCurrentData({ [type]: newGoals });
+
+    // Trigger win/confetti only when actually completing a non-blank goal
+    if (isCompletion && updatedGoal.text.trim() !== '') {
+        onAddWin(currentDateKey, `Target Completed: ${updatedGoal.text}`);
+    }
+};
+
     
     const handleSaveNewLead = async (leadData: Omit<Contact, 'id' | 'date' | 'prospecting' | 'dateAdded' | 'completedFollowUps'>) => {
         const newHotLead = {
