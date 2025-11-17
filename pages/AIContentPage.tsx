@@ -49,22 +49,22 @@ const templateFields: Record<string, { label: string; name: string; placeholder:
 
 // Templates that should show a free-form description box
 const templatesRequiringDescription = [
-    'Mastermind Group invitation',
-    'Company News letter',
+    'Mastermind Group Invitation',
+    'Company Newsletter',
     'Lesson Outline',
-    'Check list request',
+    'Checklist',
 ];
 
 const getDescriptionHelperText = (template: string): string => {
     switch (template) {
-        case 'Mastermind Group invitation':
-            return 'Describe who the mastermind is for, the main promise, how often you meet, and any bonuses or commitments you want highlighted.';
-        case 'Company News letter':
-            return 'Describe this issue’s focus: your audience, main theme, key company updates, and any important calls to action.';
+        case 'Mastermind Group Invitation':
+            return 'Describe who the mastermind is for, the main promise, how often you meet, what topics you cover, and the tone you want (casual, elite, faith-based, etc.).';
+        case 'Company Newsletter':
+            return 'Describe this issue’s focus: your audience, main theme, key company updates or wins, and any important calls to action or offers you want included.';
         case 'Lesson Outline':
-            return 'Describe the lesson topic, audience (e.g., sales team, congregation, youth), time length, key points or scriptures, and what you want people to walk away with.';
-        case 'Check list request':
-            return 'Describe what the checklist is for (e.g., sermon prep, public talk, sales presentation, home visit, ministry event), the setting, and what “done” should look like.';
+            return 'Describe the lesson topic, audience (e.g., sales team, congregation, youth), time length, key points or scriptures, and the main outcome you want for your listeners.';
+        case 'Checklist':
+            return 'Describe what the checklist should cover (e.g., sermon prep, public talk, sales presentation, home inspection, ministry event), the setting, and what “done” should look like.';
         default:
             return 'Add any details that will help the AI create exactly what you have in mind.';
     }
@@ -79,7 +79,7 @@ const AIContentPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
 
     const currentFields = useMemo(() => {
-        // Reset fields whenever template changes
+        // reset fields + description whenever template changes
         setFormDetails({});
         setDescription('');
         return templateFields[selectedTemplate] || [];
@@ -94,11 +94,11 @@ const AIContentPage: React.FC = () => {
         setError(null);
         setGeneratedContent('');
         try {
-            // Include description in payload for the templates that use it
             const payload: Record<string, string> = {
                 ...formDetails,
             };
 
+            // include description for targeted templates
             if (templatesRequiringDescription.includes(selectedTemplate) && description.trim()) {
                 payload.description = description.trim();
             }
@@ -114,12 +114,15 @@ const AIContentPage: React.FC = () => {
     };
     
     const handleCopy = () => {
-        navigator.clipboard.writeText(generatedContent).then(() => {
-            alert('Content copied to clipboard!');
-        }, (err) => {
-            console.error('Could not copy text: ', err);
-            alert('Failed to copy content.');
-        });
+        navigator.clipboard.writeText(generatedContent).then(
+            () => {
+                alert('Content copied to clipboard!');
+            },
+            (err) => {
+                console.error('Could not copy text: ', err);
+                alert('Failed to copy content.');
+            }
+        );
     };
 
     return (
@@ -129,6 +132,7 @@ const AIContentPage: React.FC = () => {
                     selectedTemplate={selectedTemplate}
                     setSelectedTemplate={setSelectedTemplate}
                 />
+
                 <div className="bg-brand-light-card dark:bg-brand-navy p-4 rounded-lg border border-brand-light-border dark:border-brand-gray">
                     <h3 className="text-lg font-bold mb-2 text-brand-light-text dark:text-white">
                         Template Details
@@ -151,11 +155,11 @@ const AIContentPage: React.FC = () => {
                             ))
                         ) : (
                             <p className="text-sm text-center text-gray-500 py-4">
-                                This template requires no structured fields. You can still add a description below to guide the AI.
+                                This template has no structured fields. Use the description box below to guide the AI.
                             </p>
                         )}
 
-                        {/* Description box for certain templates (mastermind, newsletter, lesson, checklist) */}
+                        {/* Description box for specific templates */}
                         {templatesRequiringDescription.includes(selectedTemplate) && (
                             <div>
                                 <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-1">
@@ -169,7 +173,7 @@ const AIContentPage: React.FC = () => {
                                     onChange={(e) => setDescription(e.target.value)}
                                     rows={4}
                                     className="w-full bg-transparent border border-brand-light-border dark:border-brand-gray rounded-md text-brand-light-text dark:text-white text-sm p-2 focus:outline-none focus:border-brand-blue"
-                                    placeholder="Type a clear description here (who it’s for, setting, key points, tone, etc.)..."
+                                    placeholder="Type a clear description here (who it’s for, context, key points, tone, etc.)..."
                                 />
                             </div>
                         )}
