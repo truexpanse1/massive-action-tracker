@@ -33,8 +33,7 @@ const AIChallengeCard: React.FC<AIChallengeCardProps> = ({ data, isLoading, onAc
     }, [data.quote]);
     
     // Fallback quote if fetching fails or is disabled
-    const displayQuote = data.quote || { text: 'The secret of getting ahead is getting started.', author: 'Mark Twain' };
-
+    const displayQuote = data?.quote || { text: 'The secret of getting ahead is getting started.', author: 'Mark Twain' };
     return (
         <div className="bg-brand-light-card dark:bg-brand-navy p-4 rounded-lg border border-brand-light-border dark:border-brand-gray relative">
             <h3 className="text-lg font-bold mb-4 bg-brand-gray/80 text-white p-2 rounded text-center">DAILY AI CHALLENGE</h3>
