@@ -222,18 +222,18 @@ const DayView: React.FC<DayViewProps> = ({
   ) => {
     if (originalDateKey && allData[originalDateKey] && originalDateKey !== newDateKey) {
       const originalDayData = allData[originalDateKey];
-      const updatedEvents = originalDayData.events.filter((e) => e.id !== eventData.id);
+      const updatedEvents = (originalDayData.events || []).filter((e) => e.id !== eventData.id);
       onDataChange(originalDateKey, { ...originalDayData, events: updatedEvents });
     }
 
     const newDayData = allData[newDateKey] || getInitialDayData();
-    const existingEventIndex = newDayData.events.findIndex((e) => e.id === eventData.id);
+    const existingEventIndex = (newDayData.events || []).findIndex((e) => e.id === eventData.id);
     if (existingEventIndex > -1) {
       newDayData.events[existingEventIndex] = eventData;
     } else {
       newDayData.events.push(eventData);
     }
-    newDayData.events.sort((a, b) => a.time.localeCompare(b.time));
+    if (newDayData.events) newDayData.events.sort((a, b) => a.time.localeCompare(b.time));
     onDataChange(newDateKey, newDayData);
 
     setIsEventModalOpen(false);
@@ -242,7 +242,7 @@ const DayView: React.FC<DayViewProps> = ({
   const handleDeleteEvent = (eventId: string, dateKey: string) => {
     const dayData = allData[dateKey];
     if (dayData) {
-      const updatedEvents = dayData.events.filter((e) => e.id !== eventId);
+      const updatedEvents = (dayData.events || []).filter((e) => e.id !== eventId);
       onDataChange(dateKey, { ...dayData, events: updatedEvents });
     }
     setIsEventModalOpen(false);
@@ -263,8 +263,7 @@ const DayView: React.FC<DayViewProps> = ({
 
   return (
     <>
-      <AddLeadModal
-        isOpen={isLeadModalOpen}
+      <AddLeadModalisOpen={isLeadModalOpen}
         onClose={() => setIsLeadModalOpen(false)}
         onSave={handleSaveNewLead}
       />
