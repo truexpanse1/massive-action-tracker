@@ -263,7 +263,8 @@ const DayView: React.FC<DayViewProps> = ({
 
   return (
     <>
-      <AddLeadModalisOpen={isLeadModalOpen}
+      <AddLeadModal
+        isOpen={isLeadModalOpen}
         onClose={() => setIsLeadModalOpen(false)}
         onSave={handleSaveNewLead}
       />
