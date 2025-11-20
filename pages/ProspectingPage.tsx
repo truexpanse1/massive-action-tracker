@@ -31,12 +31,12 @@ const ProspectingPage: React.FC<ProspectingPageProps> = ({ allData, onDataChange
         const contacts = currentData.prospectingContacts || [];
         const callsMade = contacts.filter(c => c.prospecting.SW || c.prospecting.NA || c.prospecting.LM).length;
 
-        if (callsMade >= 30 && !currentData.milestones.calls30Achieved) {
+        if (callsMade >= 30 && !currentData.milestones?.calls30Achieved) {
             onAddWin(currentDateKey, 'Accomplished 30 daily calls!');
             const dayData = allData[currentDateKey] || getInitialDayData();
             onDataChange(currentDateKey, { ...dayData, milestones: { ...dayData.milestones, calls30Achieved: true } });
         }
-    }, [currentData.prospectingContacts, currentDateKey, onAddWin, onDataChange, allData, currentData.milestones.calls30Achieved]);
+    }, [currentData.prospectingContacts, currentDateKey, onAddWin, onDataChange, allData, currentData.milestones?.calls30Achieved]);
 
     const updateCurrentData = (updates: Partial<DayData>) => {
         const updatedData = { ...(allData[currentDateKey] || getInitialDayData()), ...updates };

@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { AIChallengeData } from '../types';
 import { getDailyQuote } from '../services/geminiService';
@@ -15,7 +13,7 @@ const AIChallengeCard: React.FC<AIChallengeCardProps> = ({ data, isLoading, onAc
 
     useEffect(() => {
         const fetchQuote = async () => {
-            if (!data.quote) {
+            if (!data?.quote) {
                 setIsQuoteLoading(true);
                 try {
                     // This function is defined in geminiService.ts and fetches a quote
@@ -30,10 +28,10 @@ const AIChallengeCard: React.FC<AIChallengeCardProps> = ({ data, isLoading, onAc
             }
         };
         // fetchQuote(); // This would need a proper state management passed in
-    }, [data.quote]);
+    }, [data?.quote]);
     
     // Fallback quote if fetching fails or is disabled
-    const displayQuote = data.quote || { text: 'The secret of getting ahead is getting started.', author: 'Mark Twain' };
+    const displayQuote = data?.quote || { text: 'The secret of getting ahead is getting started.', author: 'Mark Twain' };
 
     return (
         <div className="bg-brand-light-card dark:bg-brand-navy p-4 rounded-lg border border-brand-light-border dark:border-brand-gray relative">
@@ -50,7 +48,7 @@ const AIChallengeCard: React.FC<AIChallengeCardProps> = ({ data, isLoading, onAc
                         <p className="font-semibold text-sm text-gray-500 dark:text-gray-400 mt-1">- {displayQuote.author}</p>
                     </div>
 
-                    {!data.challengesAccepted ? (
+                    {!data?.challengesAccepted ? (
                         <div className="text-center">
                             <p className="mb-3 font-semibold text-brand-light-text dark:text-white">Are you ready to take massive action today?</p>
                             <button

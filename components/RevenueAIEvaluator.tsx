@@ -77,10 +77,13 @@ const RevenueAIEvaluator: React.FC<RevenueAIEvaluatorProps> = ({ productData, ti
                            <p className="text-xs italic text-gray-500">{analysis.reading.description}</p>
                         </div>
                     </div>
+                                       {analysis.quote && (
+
                      <div className="border-t border-dashed border-brand-light-border dark:border-brand-gray pt-4 text-center">
                          <blockquote className="italic text-gray-700 dark:text-gray-300">"{analysis.quote.text}"</blockquote>
                          <cite className="not-italic font-semibold text-sm text-gray-500 dark:text-gray-400">- {analysis.quote.author}</cite>
                     </div>
+                  )}
                 </div>
             )}
         </div>
