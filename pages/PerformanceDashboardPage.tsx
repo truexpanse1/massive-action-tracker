@@ -1,7 +1,9 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { DayData, Transaction, User, Contact, EODSubmissions, formatCurrency } from '../types';
 import { getPerformanceEvaluation } from '../services/geminiService';
 import DatePicker from '../components/DatePicker';
+import ActivityTrendsWidgetV2 from '../components/analytics/ActivityTrendsWidgetV2';
+
 
 // --- TYPE DEFINITIONS ---
 type ChartMetric = 'revenue' | 'appts' | 'calls' | 'leads';
@@ -704,38 +706,14 @@ const PerformanceDashboardPage: React.FC<PerformanceDashboardPageProps> = ({ all
                             </div>
                         </ReportWidget>
 
-                        <ReportWidget title="Activity Trends">
-                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
-                                {/* Metric Selector */}
-                                <div className="flex items-center bg-brand-light-bg dark:bg-brand-ink p-1 rounded-lg border border-brand-light-border dark:border-brand-gray">
-                                    {(['revenue', 'appts', 'calls', 'leads'] as ChartMetric[]).map(metric => (
-                                        <button key={metric} onClick={() => setActiveMetric(metric)}
-                                            className={`px-3 py-1 text-xs font-bold rounded-md transition-colors capitalize ${activeMetric === metric ? 'bg-brand-blue text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                                            {metric}
-                                        </button>
-                                    ))}
-                                </div>
-                                {/* Chart Type Selector */}
-                                <div className="flex items-center bg-brand-light-bg dark:bg-brand-ink p-1 rounded-lg border border-brand-light-border dark:border-brand-gray">
-                                    <button onClick={() => setChartType('line')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${chartType === 'line' ? 'bg-brand-blue text-white' : 'text-gray-500 dark:text-gray-400'}`}>Line</button>
-                                    <button onClick={() => setChartType('bar')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${chartType === 'bar' ? 'bg-brand-blue text-white' : 'text-gray-500 dark:text-gray-400'}`}>Bar</button>
-                                </div>
-                            </div>
-                            <div className="h-[300px] relative">
-                                {chartData.datasets.map(dataset => (
-                                    <div key={dataset.userId} className="absolute inset-0">
-                                        <InteractiveChart
-                                            data={dataset.data.map((val, i) => ({ label: chartData.labels[i], value: val, details: {} as RawDetailData }))}
-                                            color={dataset.color}
-                                            type={chartType}
-                                            formatValue={activeMetric === 'revenue' ? formatCurrency : formatNumber}
-                                        />
-                                    </div>
-                                ))}
-                                {chartData.datasets.length === 0 && (
-                                    <div className="flex items-center justify-center h-full text-gray-500">Select a sales rep to see their trends.</div>
-                                )}
-                            </div>
+                                              <ReportWidget title="Activity Trends">
+                            <ActivityTrendsWidgetV2
+                                labels={chartData.labels}
+                                rawData={historicalData.rawData}
+                                selectedUsers={selectedUsers}
+                                userColors={userColors}
+                                usersById={usersById}
+                            />
                         </ReportWidget>
                     </div>
                 </div>
