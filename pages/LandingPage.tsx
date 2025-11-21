@@ -142,19 +142,62 @@ const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Features – unchanged (keep your existing 4 features here) */}
+        {/* Features – keep your existing 4 features */}
         <section id="features" className="py-20 sm:py-24 px-4">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-3xl sm:text-4xl font-bold text-center text-brand-light-text dark:text-white mb-3">
               Turn Activity Into Predictable Revenue
             </h2>
+            <p className="text-center max-w-2xl mx-auto text-sm sm:text-base text-brand-light-gray dark:text-gray-400 mb-12">
+              MAT was built for sales pros who are tired of bloated CRMs and guesswork. You get the exact views you need to execute today and coach better tomorrow.
+            </p>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {/* Your 4 existing Feature components stay exactly the same – no changes needed */}
+              {/* Your 4 existing Feature components – leave them exactly as they are */}
+              <Feature
+                title="Own Your Day"
+                icon={
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                }
+              >
+                See calls, texts, emails, appointments, and wins in one Day View. MAT makes it obvious what you’ve done and what still needs to happen.
+              </Feature>
+              <Feature
+                title="Pipeline, Not Hope"
+                icon={
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                }
+              >
+                Track hot leads, follow-ups, and appointments so no opportunity slips. Watch activity turn into pipeline, then into revenue.
+              </Feature>
+              <Feature
+                title="Built-In AI Sales Partner"
+                icon={
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                }
+              >
+                Generate marketing images, social posts, outreach scripts, and daily challenges that keep your pipeline full and your skills sharp.
+              </Feature>
+              <Feature
+                title="Coach the Whole Team"
+                icon={
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                }
+              >
+                Add reps, see their EOD reports, compare KPIs, and spot who needs coaching today. Finally manage your team from real numbers, not feelings.
+              </Feature>
             </div>
           </div>
         </section>
 
-        {/* NEW PRICING – $39 / $149 / $399 */}
+        {/* PRICING – $39 / $149 / $399 */}
         <section id="pricing" className="py-20 sm:py-24 px-4 bg-brand-light-bg dark:bg-brand-ink">
           <div className="max-w-5xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold text-brand-light-text dark:text-white">
@@ -165,6 +208,7 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
           <div className="max-w-7xl mx-auto mt-16 grid lg:grid-cols-3 gap-8">
+            {/* Rep – $39 */}
             <PricingCard
               plan="Rep"
               price="39"
@@ -179,6 +223,8 @@ const LandingPage: React.FC = () => {
               ]}
               ctaLink="/login"
             />
+
+            {/* Manager – $149 (MOST POPULAR) */}
             <PricingCard
               plan="Manager"
               price="149"
@@ -194,18 +240,20 @@ const LandingPage: React.FC = () => {
               isFeatured={true}
               ctaLink="/login"
             />
+
+            {/* Company – $399 */}
             <PricingCard
               plan="Company"
               price="399"
               description="For growing sales organizations that want unlimited seats."
-              features=[
+              features={[
                 'Unlimited reps',
                 'Everything in Manager',
                 'Priority support',
                 'Custom branding (coming soon)',
                 'API access (coming soon)',
                 '30-day money-back guarantee',
-              ]
+              ]}
               ctaLink="/login"
             />
           </div>
