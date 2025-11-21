@@ -228,14 +228,14 @@ const LandingPage: React.FC = () => {
               plan="Manager"
               price="149"
               description="For sales managers and small teams who need the Leadership tab."
-              features=[
+              features={[
                 'Up to 10 reps ($12 per extra rep)',
                 'Everything in Rep',
                 'Leadership tab – invite/remove reps',
                 'Team leaderboards & EOD reports',
                 'Admin controls & reporting',
                 '14-day money-back guarantee',
-              ]
+              ]}
               isFeatured={true}
               ctaLink="/login"
             />
@@ -245,20 +245,20 @@ const LandingPage: React.FC = () => {
               plan="Company"
               price="399"
               description="For growing sales organizations that want unlimited seats."
-              features=[
+              features={[
                 'Unlimited reps',
                 'Everything in Manager',
                 'Priority support',
                 'Custom branding (coming soon)',
                 'API access (coming soon)',
                 '30-day money-back guarantee',
-              ]
+              ]}
               ctaLink="/login"
             />
           </div>
 
           {/* Powered by Stripe badge */}
-          <div className="mt-12 text-center">
+          <div className="mt-16 text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Secure payments powered by
             </p>
