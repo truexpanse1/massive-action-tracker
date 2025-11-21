@@ -142,7 +142,7 @@ const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Features – keep your existing 4 features */}
+        {/* Features */}
         <section id="features" className="py-20 sm:py-24 px-4">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-3xl sm:text-4xl font-bold text-center text-brand-light-text dark:text-white mb-3">
@@ -152,7 +152,6 @@ const LandingPage: React.FC = () => {
               MAT was built for sales pros who are tired of bloated CRMs and guesswork. You get the exact views you need to execute today and coach better tomorrow.
             </p>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {/* Your 4 existing Feature components – leave them exactly as they are */}
               <Feature
                 title="Own Your Day"
                 icon={
@@ -197,7 +196,7 @@ const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        {/* PRICING – $39 / $149 / $399 */}
+        {/* Pricing */}
         <section id="pricing" className="py-20 sm:py-24 px-4 bg-brand-light-bg dark:bg-brand-ink">
           <div className="max-w-5xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold text-brand-light-text dark:text-white">
@@ -229,14 +228,14 @@ const LandingPage: React.FC = () => {
               plan="Manager"
               price="149"
               description="For sales managers and small teams who need the Leadership tab."
-              features={[
+              features=[
                 'Up to 10 reps ($12 per extra rep)',
                 'Everything in Rep',
                 'Leadership tab – invite/remove reps',
                 'Team leaderboards & EOD reports',
                 'Admin controls & reporting',
                 '14-day money-back guarantee',
-              ]}
+              ]
               isFeatured={true}
               ctaLink="/login"
             />
@@ -246,15 +245,27 @@ const LandingPage: React.FC = () => {
               plan="Company"
               price="399"
               description="For growing sales organizations that want unlimited seats."
-              features={[
+              features=[
                 'Unlimited reps',
                 'Everything in Manager',
                 'Priority support',
                 'Custom branding (coming soon)',
                 'API access (coming soon)',
                 '30-day money-back guarantee',
-              ]}
+              ]
               ctaLink="/login"
+            />
+          </div>
+
+          {/* Powered by Stripe badge */}
+          <div className="mt-12 text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Secure payments powered by
+            </p>
+            <img 
+              src="https://stripe.com/img/v3/powered_by_stripe/tall.png" 
+              alt="Powered by Stripe" 
+              className="h-12 mx-auto"
             />
           </div>
         </section>
