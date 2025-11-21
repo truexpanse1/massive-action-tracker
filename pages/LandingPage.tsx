@@ -31,33 +31,7 @@ const PricingCard: React.FC<{
       const { url } = await res.json();
       window.location.href = url;
     } catch (err) {
-      alert('Checkout error – please try again');
-    }
-  };
-
-  return (
-    <div
-      className={`border rounded-lg p-8 flex flex-col ${
-        isFeatured
-          ? 'border-brand-red scale-105 bg-brand-navy'
-          : 'border-brand-light-border dark:border-brand-gray bg-brand-light-card dark:bg-brand-navy'
-      }`}
-    >
-      <h3 className={`text-2xl font-bold ${isFeatured ? 'text-white' : 'text-brand-light-text dark:text-white'}`}>
-        {plan}
-      </h3>
-      <p className={`mt-2 ${isFeatured ? 'text-gray-300' : 'text-brand, description, features, isFeatured, priceId }) => {
-  const handleCheckout = async () => {
-    try {
-      const res = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
-      });
-      const { url } = await res.json();
-      window.location.href = url;
-    } catch (err) {
-      alert('Checkout error – please try again');
+      alert('Checkout failed – please try again');
     }
   };
 
@@ -185,14 +159,13 @@ const LandingPage: React.FC = () => {
         {/* Features */}
         <section id="features" className="py-20 sm:py-24 px-4">
           <div className="max-w-7xl mx-auto">
-            < H2 className="text-3xl sm:text-4xl font-bold text-center text-brand-light-text dark:text-white mb-3">
+            <h2 className="text-3xl sm:text-4xl font-bold text-center text-brand-light-text dark:text-white mb-3">
               Turn Activity Into Predictable Revenue
             </h2>
             <p className="text-center max-w-2xl mx-auto text-sm sm:text-base text-brand-light-gray dark:text-gray-400 mb-12">
               MAT was built for sales pros who are tired of bloated CRMs and guesswork. You get the exact views you need to execute today and coach better tomorrow.
             </p>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {/* Your 4 existing features – unchanged */}
               <Feature
                 title="Own Your Day"
                 icon={
