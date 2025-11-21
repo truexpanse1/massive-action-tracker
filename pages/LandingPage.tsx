@@ -234,7 +234,7 @@ const LandingPage: React.FC = () => {
                 'Daily MAT Challenges',
                 '7-day free trial – no card required',
               ]}
-              priceId="price_1SVlnZAF9E77pmGUvD2x0V0U"
+              priceId="price_1SVlc7AF9E77pmGU1ZadSw1A"
             />
 
             {/* Manager – $149 (MOST POPULAR) */}
@@ -251,7 +251,7 @@ const LandingPage: React.FC = () => {
                 '14-day money-back guarantee',
               ]}
               isFeatured={true}
-              priceId="price_1SVlnkAF9E77pmGU5fL3w8oR"
+              priceId="price_1SVlmuAF9E77pmGUmOiwZiwO"
             />
 
             {/* Company – $399 */}
