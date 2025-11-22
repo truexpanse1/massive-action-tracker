@@ -1,4 +1,4 @@
-// components/LoginPage.tsx  (or wherever it lives)
+// components/LoginPage.tsx   (or wherever it lives)
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 
@@ -26,7 +26,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onClose }) => {
     if (error) {
       setError(error.message);
     } else {
-      onClose(); // Close modal on success
+      onClose(); // Close modal on successful login
     }
 
     setIsLoading(false);
@@ -38,6 +38,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onClose }) => {
         className="bg-brand-light-card dark:bg-brand-navy border border-brand-light-border dark:border-brand-gray rounded-lg shadow-xl p-8 w-full max-w-md animate-fade-in"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className="text-center mb-8">
           <h2 className="text-3xl font-black text-brand-lime mb-3">
             Welcome Back
@@ -47,6 +48,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onClose }) => {
           </p>
         </div>
 
+        {/* Login Form */}
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-2">
@@ -58,8 +60,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onClose }) => {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={isLoading}
-              className="w-full px-4 py-3 bg-brand-light-bg dark:bg-brand-ink border border-brand-light-border dark:border-brand-gray rounded-md focus:outline-none focus:ring-2 focus:ring-brand-lime"
               placeholder="you@domain.com"
+              className="w-full px-4 py-3 bg-brand-light-bg dark:bg-brand-ink border border-brand-light-border dark:border-brand-gray rounded-md focus:outline-none focus:ring-2 focus:ring-brand-lime"
             />
           </div>
 
@@ -79,16 +81,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onClose }) => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3.5 text-gray-500"
+                className="absolute right-3 top-3.5 text-gray-500 hover:text-brand-lime"
               >
                 {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
           </div>
 
-          {error && (
-            <p className="text-brand-red text-center font-medium">{error}</p>
-          )}
+          {error && <p className="text-brand-red text-center font-medium">{error}</p>}
 
           <button
             type="submit"
@@ -99,17 +99,26 @@ const LoginPage: React.FC<LoginPageProps> = ({ onClose }) => {
           </button>
         </form>
 
-        {/* THIS IS THE LOCKDOWN MESSAGE */}
+        {/* LOCKDOWN MESSAGE + WORKING BUTTON */}
         <div className="mt-10 text-center p-6 bg-brand-red/10 rounded-lg border border-brand-red/30">
           <p className="text-brand-red font-bold text-lg mb-2">
             Free Sign-Ups Disabled
           </p>
-          <p className="text-gray-300 text-sm">
+          <p className="text-gray-300 text-sm mb-4">
             All new accounts require a paid 7-day trial with card upfront.
           </p>
+
+          {/* THIS BUTTON NOW WORKS PERFECTLY */}
           <a
-            href="/#pricing"
-            className="inline-block mt-4 bg-brand-lime text-black font-bold py-3 px-8 rounded-lg hover:scale-105 transition"
+            href="#pricing"
+            onClick={(e) => {
+              e.preventDefault();
+              onClose(); // ← closes modal
+              document
+                .getElementById('pricing')
+                ?.scrollIntoView({ behavior: 'smooth' }); // ← smooth scroll to pricing
+            }}
+            className="inline-block bg-brand-lime text-black font-bold py-3 px-8 rounded-lg hover:scale-105 transition cursor-pointer"
           >
             Start Your 7-Day Trial
           </a>
