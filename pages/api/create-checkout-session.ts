@@ -1,4 +1,4 @@
-// pages/api/create-checkout-session.ts   ← overwrite the whole file with this
+// pages/api/create-checkout-session.ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 
@@ -7,6 +7,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // ONLY ALLOW POST – this fixes the 405 error you were getting
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).end('Method Not Allowed');
@@ -15,27 +16,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { priceId, email } = req.body;
 
-    // ← THESE TWO LINES ARE CRITICAL – block anyone without email/price
-    if (!email) return res.status(400).json({ error: 'Email is required' });
-    if (!priceId) return res.status(400).json({ error: 'Price ID is required' });
+    // Safety checks – will never happen from your frontend but good practice
+    if (!email || !priceId) {
+      return res.status(400).json({ error: 'Email and Price ID are required' });
+    }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
       customer_email: email,
       subscription_data: {
-        trial_period_days: 7,                                 // ← 7-day free trial
-        trial_settings: { end_behavior: { missing_payment_method: 'cancel' } },
+        trial_period_days: 7,
+        trial_settings: {
+          end_behavior: { missing_payment_method: 'cancel' },
+        },
       },
-      success_url: `${req.headers.origin}/trial-success`,     // ← new page (create next)
-      cancel_url: `${req.headers.origin}/#pricing`,
-      metadata: { note: '7-day card-upfront trial' },
+      success_url: `${req.headers.origin || 'https://apptruexpanse.com'}/trial-success`,
+      cancel_url: `${req.headers.origin || 'https://apptruexpanse.com'}/#pricing`,
+      metadata: {
+        note: '7-day card-upfront trial',
+      },
     });
 
     return res.status(200).json({ url: session.url });
   } catch (err: any) {
-    console.error('Stripe error:', err);
-    return res.status(500).json({ error: err.message });
+    console.error('Stripe Checkout Error:', err.message);
+    return res.status(500).json({ error: err.message || 'Something went wrong' });
   }
 }
