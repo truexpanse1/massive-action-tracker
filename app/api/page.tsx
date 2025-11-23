@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import LoginPage from './LoginPage';
 
+// NOTE: The 'LoginPage' component is assumed to be defined elsewhere.
+
 const Feature: React.FC<{ icon: React.ReactElement; title: string; children: React.ReactNode }> = ({
   icon,
   title,
@@ -21,33 +23,45 @@ const PricingCard: React.FC<{
   isFeatured?: boolean;
   priceId: string;
 }> = ({ plan, price, description, features, isFeatured, priceId }) => {
- const handleCheckout = async () => {
-  const email = prompt('Enter your email to start your 7-day free trial (card required):');
+  // FIX: Removed 'priceId' argument from handleCheckout since it is already available 
+  // as a prop in the component's scope.
+  const handleCheckout = async () => {
+    const email = prompt('Enter your email to start your 7-day free trial (card required):');
 
-  // Validate email
-  if (!email || !email.includes('@') || !email.includes('.')) {
-    alert('Please enter a valid email – this is how you’ll log in');
-    return;
-  }
-
-  try {
-    const res = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ priceId, email }), // ← now sending email too
-    });
-
-    const data = await res.json();
-
-    if (data.url) {
-      window.location.href = data.url; // sends them to Stripe Checkout
-    } else {
-      alert('Something went wrong. Please try again.');
+    // Validate email
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      alert('Please enter a valid email – this is how you’ll log in');
+      return;
     }
-  } catch (err) {
-    alert('Checkout failed – please try again');
-  }
-};
+
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId, email }), // 'priceId' is now correctly accessed from props
+      });
+
+      // FIX: Check for non-200 status codes before attempting to parse JSON
+      if (!res.ok) {
+        // If the server returns an error (e.g., 404, 500), throw an error to hit the catch block
+        const errorData = await res.json().catch(() => ({ message: 'Unknown server error' }));
+        throw new Error(errorData.message || 'Server responded with an error status.');
+      }
+
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url; // sends them to Stripe Checkout
+      } else {
+        // This handles a successful 200 response but with no URL (e.g., a logic error on the server)
+        alert('Something went wrong. Please try again.');
+      }
+    } catch (err) {
+      // FIX: Use console.error to log the actual error for better debugging
+      console.error('Checkout failed:', err);
+      alert('Checkout failed – please try again');
+    }
+  };
 
   return (
     <div
@@ -214,7 +228,7 @@ const LandingPage: React.FC = () => {
                 title="Coach the Whole Team"
                 icon={
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 }
               >
