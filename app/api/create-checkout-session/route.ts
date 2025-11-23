@@ -6,12 +6,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
-export async function POST(request: Request) {
+export const POST = async (request: Request) => {
   try {
     const { priceId, email } = await request.json();
 
-    if (!email || !priceId) {
-      return new NextResponse('Email and priceId are required', { status: 400 });
+    if (!priceId || !email) {
+      return new NextResponse('Missing priceId or email', { status: 400 });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -21,18 +21,13 @@ export async function POST(request: Request) {
       customer_email: email,
       subscription_data: {
         trial_period_days: 7,
-        trial_settings: {
-          end_behavior: { missing_payment_method: 'cancel' },
-        },
       },
       success_url: `${new URL(request.url).origin}/trial-success`,
       cancel_url: `${new URL(request.url).origin}/#pricing`,
-      metadata: { note: '7-day card-upfront trial' },
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (err: any) {
-    console.error('Stripe error:', err);
-    return new NextResponse(err.message || 'Something went wrong', { status: 500 });
+  } catch (error: any) {
+    return new NextResponse(error.message, { status: 500 });
   }
-}
+};
