@@ -65,22 +65,17 @@ const DayView: React.FC<DayViewProps> = ({
   const getDateKey = (date: Date): string => date.toISOString().split('T')[0];
   const currentDateKey = getDateKey(selectedDate);
 
-  // ✅ Use a memoized snapshot of the current day's data
-  const currentData: DayData = useMemo(
-    () => allData[currentDateKey] || getInitialDayData(),
-    [allData, currentDateKey],
-  );
+  // same as before
+  const currentData: DayData = allData[currentDateKey] || getInitialDayData();
 
-  // ✅ Always merge updates into the latest currentData for this day
-const updateCurrentData = (updates: Partial<DayData>) => {
-  // Always merge into the latest currentData snapshot for this date
-  const updatedData: DayData = {
-    ...currentData,
-    ...updates,
+  // 🔧 ONLY CHANGE: merge into currentData instead of re-reading allData[currentDateKey]
+  const updateCurrentData = (updates: Partial<DayData>) => {
+    const updatedData: DayData = {
+      ...currentData,
+      ...updates,
+    };
+    onDataChange(currentDateKey, updatedData);
   };
-  onDataChange(currentDateKey, updatedData);
-};
-
 
   const calculatedRevenue = useMemo<RevenueData>(() => {
     const todayKey = getDateKey(selectedDate);
@@ -171,16 +166,11 @@ const updateCurrentData = (updates: Partial<DayData>) => {
     updatedGoal: Goal,
     isCompletion: boolean,
   ) => {
-    // Use the goals for the current day that are already in memory
     const goals = currentData[type] || [];
-
-    // Replace just the one goal we updated
     const newGoals = goals.map((g) => (g.id === updatedGoal.id ? updatedGoal : g));
 
-    // Persist the change for this day
     updateCurrentData({ [type]: newGoals });
 
-    // Trigger win/confetti only when actually completing a non-blank goal
     if (isCompletion && updatedGoal.text.trim() !== '') {
       onAddWin(currentDateKey, `Target Completed: ${updatedGoal.text}`);
     }
