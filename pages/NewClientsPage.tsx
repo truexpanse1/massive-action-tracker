@@ -1,303 +1,167 @@
-// src/pages/LandingPage.tsx (or wherever your LandingPage lives)
-import React from 'react';
+import Image from "next/image";
+import Link from "next/link";
 
-const LandingPage: React.FC = () => {
+export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
+    <div className="min-h-screen bg-[#0E0E11] text-white">
+      
       {/* HEADER */}
-      <header className="w-full border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <img
-              src="/truexpanse-logo.png"
-              alt="TrueXpanse"
-              className="h-8 w-auto"
-            />
-            <span className="hidden sm:inline text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase">
-              Massive Action Tracker
-            </span>
-          </div>
-
-          <nav className="flex items-center gap-6 text-sm">
-            <a href="#how-it-works" className="text-slate-300 hover:text-white transition">
-              How it works
-            </a>
-            <a href="#pricing" className="text-slate-300 hover:text-white transition">
-              Pricing
-            </a>
-            {/* existing accounts login */}
-            <a
-              href="/login"
-              className="px-4 py-2 rounded-full border border-slate-600 text-sm font-semibold hover:border-red-500 hover:text-red-300 transition"
-            >
-              Login
-            </a>
-          </nav>
+      <header className="flex items-center justify-between px-8 py-6 border-b border-white/10">
+        <div className="flex items-center">
+          <Image
+            src="/public-truexpanse-logo.png"
+            width={180}
+            height={60}
+            alt="TrueXpanse Logo"
+          />
         </div>
+
+        <nav className="flex items-center gap-10 text-sm">
+          <Link href="#features" className="hover:text-red-500 transition">Features</Link>
+          <Link href="#pricing" className="hover:text-red-500 transition">Pricing</Link>
+          <Link 
+            href="/login" 
+            className="px-5 py-2 rounded-lg font-semibold bg-white text-black hover:bg-red-500 hover:text-white transition"
+          >
+            Login
+          </Link>
+        </nav>
       </header>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1">
-        {/* HERO */}
-        <section className="bg-slate-950">
-          <div className="max-w-6xl mx-auto px-6 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.25em] text-red-400 uppercase mb-4">
-                SALES EXECUTION PLATFORM
-              </p>
-              <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-6">
-                Turn Massive Activity into
-                <span className="text-red-500"> Predictable Revenue</span>.
-              </h1>
-              <p className="text-base lg:text-lg text-slate-300 mb-6">
-                Massive Action Tracker (MAT) gives your team one powerful command
-                center for daily outreach, pipeline, and revenue. No more
-                scattered spreadsheets, missed follow-ups, or mystery numbers.
-              </p>
-              <ul className="space-y-2 text-sm text-slate-300 mb-8">
-                <li>• Track calls, texts, emails, appointments, and deals in one view</li>
-                <li>• See daily KPIs and revenue in real time—by rep or by team</li>
-                <li>• Built-in coaching prompts to keep reps focused on the right actions</li>
-              </ul>
+      {/* HERO SECTION */}
+      <section className="max-w-5xl mx-auto text-center px-8 py-24">
+        
+        <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
+          Your Team Is Closer to Consistency Than You Think
+        </h1>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <a
-                  href="#pricing"
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-red-600 text-white font-semibold text-sm shadow-lg shadow-red-600/30 hover:bg-red-500 transition"
-                >
-                  Start Free 7-Day Trial
-                </a>
-                <a
-                  href="#how-it-works"
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-600 text-sm font-semibold text-slate-100 hover:border-slate-400 transition"
-                >
-                  Watch MAT in Action
-                </a>
-              </div>
+        <p className="text-xl text-white/70 max-w-3xl mx-auto">
+          Most sales teams don’t fail because of skill — they fail because they 
+          can’t stay consistent. The Massive Action Tracker removes the guesswork, 
+          builds iron-clad daily habits, and gives you complete visibility into 
+          KPIs, effort, pipeline and results in minutes a day.
+        </p>
 
-              <p className="mt-4 text-xs text-slate-400">
-                No contracts • Cancel anytime • Perfect for remote and in-field sales teams
-              </p>
-            </div>
+        <div className="mt-10 flex justify-center">
+          <Link
+            href="#pricing"
+            className="px-10 py-4 bg-red-600 rounded-xl font-semibold text-lg hover:bg-red-700 transition"
+          >
+            Start Your 7-Day Free Trial
+          </Link>
+        </div>
+      </section>
 
-            {/* LIGHT HERO PANEL */}
-            <div className="bg-slate-50 text-slate-900 rounded-3xl p-6 lg:p-8 shadow-2xl shadow-slate-900/70">
-              <h3 className="text-sm font-semibold text-red-600 mb-4 uppercase tracking-wide">
-                Today&apos;s Command Center
-              </h3>
-              <div className="space-y-4 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-slate-700">Pipeline Health</span>
-                  <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-semibold">
-                    On track
-                  </span>
-                </div>
+      {/* FEATURES */}
+      <section id="features" className="py-24 bg-[#151518]">
+        <div className="max-w-6xl mx-auto px-8">
+          <h2 className="text-4xl font-bold text-center mb-16">Built for Teams Who Need Results This Quarter</h2>
 
-                <div className="grid grid-cols-3 gap-3 text-xs">
-                  <div className="rounded-xl bg-slate-900 text-slate-50 p-3">
-                    <p className="text-slate-400 mb-1">New Leads</p>
-                    <p className="text-lg font-bold">27</p>
-                    <p className="text-[11px] text-emerald-300 mt-1">+9 vs. yesterday</p>
-                  </div>
-                  <div className="rounded-xl bg-slate-900 text-slate-50 p-3">
-                    <p className="text-slate-400 mb-1">Appointments</p>
-                    <p className="text-lg font-bold">11</p>
-                    <p className="text-[11px] text-emerald-300 mt-1">5 held today</p>
-                  </div>
-                  <div className="rounded-xl bg-slate-900 text-slate-50 p-3">
-                    <p className="text-slate-400 mb-1">Revenue</p>
-                    <p className="text-lg font-bold">$18,400</p>
-                    <p className="text-[11px] text-emerald-300 mt-1">Week-to-date</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-xl border border-slate-200 p-3 bg-white">
-                  <p className="text-xs font-semibold text-slate-600 mb-2">
-                    Today&apos;s Top Targets
-                  </p>
-                  <ul className="space-y-1 text-xs">
-                    <li>▢ Call 25 past-due quotes</li>
-                    <li>▢ Book 5 follow-up demos</li>
-                    <li>▢ Reactivate 10 cold opportunities</li>
-                  </ul>
-                </div>
-
-                <p className="mt-4 text-[11px] text-slate-500">
-                  MAT turns your team&apos;s activity into a clear, simple scorecard—
-                  so everyone knows exactly what to do to hit the number.
-                </p>
-              </div>
-            </div>
+          <div className="grid md:grid-cols-3 gap-12">
+            <Feature
+              title="Daily Accountability That Sticks"
+              text="Turn KPI tracking into a fast, addictive habit. No spreadsheets. No chaos. Just clarity."
+            />
+            <Feature
+              title="Pipeline Tracking That Actually Helps"
+              text="See your entire pipeline at a glance with zero confusion. Every rep knows exactly what to do next."
+            />
+            <Feature
+              title="Manager Visibility in Real Time"
+              text="Instant access to rep performance, daily activity, and appointments — without chasing anyone down."
+            />
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* HOW IT WORKS / BENEFITS */}
-        <section
-          id="how-it-works"
-          className="bg-slate-900/80 border-y border-slate-800"
-        >
-          <div className="max-w-6xl mx-auto px-6 py-14 grid md:grid-cols-3 gap-8">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-3">
-                A scoreboard your sales team will actually use.
-              </h2>
-              <p className="text-sm text-slate-300">
-                MAT was built by a sales coach who lives in the trenches with
-                contractors, agencies, and small business teams. Every screen is
-                designed to keep reps moving, not buried in admin.
-              </p>
-            </div>
-            <div className="space-y-4 text-sm text-slate-200">
-              <h3 className="font-semibold text-slate-100">
-                1. Track the actions that move the needle
-              </h3>
-              <p className="text-slate-300">
-                Calls, texts, emails, door knocks, demos, quotes, closes—MAT
-                captures the daily grind and rolls it into clean KPI dashboards.
-              </p>
-              <h3 className="font-semibold text-slate-100 mt-4">
-                2. See your pipeline in real time
-              </h3>
-              <p className="text-slate-300">
-                Know exactly how many new leads, hot prospects, and new clients
-                came in today, this week, and this month—by rep or by team.
-              </p>
-            </div>
-            <div className="space-y-4 text-sm text-slate-200">
-              <h3 className="font-semibold text-slate-100">
-                3. Coach your team with real numbers
-              </h3>
-              <p className="text-slate-300">
-                End-of-day reports and simple trend charts show who&apos;s
-                winning, who&apos;s stuck, and where you can coach for
-                immediate gains.
-              </p>
-              <h3 className="font-semibold text-slate-100 mt-4">
-                4. Keep everything in one workspace
-              </h3>
-              <p className="text-slate-300">
-                No more chasing spreadsheets and sticky notes. MAT keeps
-                activity tracking, pipeline, revenue, and coaching prompts in
-                one clean, easy-to-use platform.
-              </p>
-            </div>
+      {/* PRICING */}
+      <section id="pricing" className="py-24 bg-[#0E0E11]">
+        <div className="max-w-6xl mx-auto px-8 text-center">
+          <h2 className="text-4xl font-bold mb-4">Choose Your Plan</h2>
+          <p className="text-white/70 mb-16">Simple pricing. Powerful results. No long-term contracts.</p>
+
+          <div className="grid md:grid-cols-3 gap-10">
+            <PriceCard
+              title="Starter"
+              price="$39/mo"
+              description="Perfect for individual operators or solo reps who want to build consistency fast."
+            />
+            <PriceCard
+              title="Team"
+              price="$149/mo"
+              highlight
+              description="Up to 10 users. Built for sales teams who want accountability, visibility, and results."
+            />
+            <PriceCard
+              title="Team + Coaching"
+              price="$399/mo"
+              description="Up to 10 users plus one monthly group coaching call with Don."
+            />
           </div>
-        </section>
 
-        {/* PRICING */}
-        <section id="pricing" className="bg-slate-50 text-slate-900">
-          <div className="max-w-6xl mx-auto px-6 py-16">
-            <div className="text-center mb-10">
-              <p className="text-xs font-semibold tracking-[0.25em] text-red-500 uppercase mb-3">
-                SIMPLE PLANS
-              </p>
-              <h2 className="text-3xl font-extrabold mb-3">
-                Choose the Massive Action plan that fits your team.
-              </h2>
-              <p className="text-sm text-slate-500 max-w-2xl mx-auto">
-                Start with a 7-day free trial. No credit card required. Upgrade
-                or cancel anytime.
-              </p>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-3">
-              {/* Solo */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 flex flex-col shadow-sm">
-                <h3 className="text-sm font-semibold text-slate-700 mb-1">
-                  Solo Producer
-                </h3>
-                <p className="text-xs text-slate-500 mb-4">
-                  For commission-driven closers who want a daily scoreboard.
-                </p>
-                <p className="text-3xl font-extrabold mb-1">$39</p>
-                <p className="text-xs text-slate-500 mb-4">per month • 1 user</p>
-                <ul className="text-xs text-slate-600 space-y-2 mb-6">
-                  <li>• Day View with KPIs & revenue</li>
-                  <li>• Prospecting & pipeline tracking</li>
-                  <li>• End-of-day reports for self-review</li>
-                  <li>• AI image & copy prompts for marketing</li>
-                </ul>
-                <a
-                  href="/signup?plan=solo"
-                  className="mt-auto inline-flex justify-center px-4 py-2 rounded-xl border border-slate-300 text-sm font-semibold text-slate-800 hover:border-red-500 hover:text-red-600 transition"
-                >
-                  Start Solo Trial
-                </a>
-              </div>
-
-              {/* Team */}
-              <div className="rounded-3xl border border-red-500 bg-slate-900 text-slate-50 p-6 flex flex-col shadow-xl shadow-red-500/30 relative overflow-hidden">
-                <span className="absolute top-4 right-4 text-[10px] font-semibold bg-red-500 text-white px-2 py-1 rounded-full tracking-wide">
-                  MOST POPULAR
-                </span>
-                <h3 className="text-sm font-semibold mb-1">Team Workspace</h3>
-                <p className="text-xs text-slate-300 mb-4">
-                  For leaders who want every rep focused on the right actions.
-                </p>
-                <p className="text-3xl font-extrabold mb-1">$149</p>
-                <p className="text-xs text-slate-400 mb-4">
-                  per month • up to 10 users
-                </p>
-                <ul className="text-xs text-slate-200 space-y-2 mb-6">
-                  <li>• Everything in Solo Producer</li>
-                  <li>• Manager dashboard & team KPIs</li>
-                  <li>• Pipeline & new clients pages</li>
-                  <li>• EOD reports by rep for coaching</li>
-                  <li>• Priority feature updates</li>
-                </ul>
-                <a
-                  href="/signup?plan=team"
-                  className="mt-auto inline-flex justify-center px-4 py-2 rounded-xl bg-red-600 text-sm font-semibold text-white hover:bg-red-500 transition"
-                >
-                  Start Team Trial
-                </a>
-              </div>
-
-              {/* Coaching */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 flex flex-col shadow-sm">
-                <h3 className="text-sm font-semibold text-slate-700 mb-1">
-                  Team + Coaching
-                </h3>
-                <p className="text-xs text-slate-500 mb-4">
-                  For serious teams that want ongoing strategy and accountability.
-                </p>
-                <p className="text-3xl font-extrabold mb-1">$399</p>
-                <p className="text-xs text-slate-500 mb-4">
-                  per month • up to 10 users
-                </p>
-                <ul className="text-xs text-slate-600 space-y-2 mb-6">
-                  <li>• Everything in Team Workspace</li>
-                  <li>• 1 monthly group coaching call</li>
-                  <li>• Call review & pipeline strategy</li>
-                  <li>• Implementation checklists for leaders</li>
-                </ul>
-                <a
-                  href="/signup?plan=coaching"
-                  className="mt-auto inline-flex justify-center px-4 py-2 rounded-xl border border-slate-300 text-sm font-semibold text-slate-800 hover:border-red-500 hover:text-red-600 transition"
-                >
-                  Apply for Coaching Plan
-                </a>
-              </div>
-            </div>
-
-            <p className="mt-6 text-[11px] text-slate-500 text-center">
-              Need more than 10 users or private coaching for your leadership
-              team? Reach out from inside the app and we&apos;ll customize a
-              plan.
-            </p>
+          <div className="mt-16">
+            <Link 
+              href="/signup"
+              className="px-10 py-4 text-lg font-semibold bg-red-600 rounded-xl hover:bg-red-700 transition"
+            >
+              Start Your 7-Day Free Trial
+            </Link>
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
 
       {/* FOOTER */}
-      <footer className="bg-slate-950 border-t border-slate-800">
-        <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} TrueXpanse. All rights reserved.</p>
-          <p>Built for sales teams who believe in massive action and measurable results.</p>
-        </div>
+      <footer className="text-center py-10 text-white/40 text-sm">
+        © {new Date().getFullYear()} TrueXpanse. All rights reserved.
       </footer>
     </div>
   );
-};
+}
 
-export default LandingPage;
+/* COMPONENTS */
+
+function Feature({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="bg-[#1D1D21] p-8 rounded-xl border border-white/5">
+      <h3 className="text-2xl font-bold mb-3">{title}</h3>
+      <p className="text-white/60 leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
+function PriceCard({
+  title,
+  price,
+  description,
+  highlight,
+}: {
+  title: string;
+  price: string;
+  description: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={`p-8 rounded-2xl border transition ${
+        highlight
+          ? "border-red-600 bg-white/5 scale-105"
+          : "border-white/10 bg-white/5"
+      }`}
+    >
+      <h3 className="text-2xl font-bold mb-2">{title}</h3>
+      <p className="text-4xl font-bold mb-4">{price}</p>
+      <p className="text-white/60 mb-8">{description}</p>
+
+      <Link
+        href="/signup"
+        className={`block py-3 rounded-lg font-semibold transition ${
+          highlight
+            ? "bg-red-600 hover:bg-red-700"
+            : "bg-white text-black hover:bg-red-600 hover:text-white"
+        }`}
+      >
+        Get Started
+      </Link>
+    </div>
+  );
+}
