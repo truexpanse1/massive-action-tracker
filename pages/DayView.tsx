@@ -65,11 +65,16 @@ const DayView: React.FC<DayViewProps> = ({
   const getDateKey = (date: Date): string => date.toISOString().split('T')[0];
   const currentDateKey = getDateKey(selectedDate);
 
-  const currentData: DayData = allData[currentDateKey] || getInitialDayData();
+  // ✅ Use a memoized snapshot of the current day's data
+  const currentData: DayData = useMemo(
+    () => allData[currentDateKey] || getInitialDayData(),
+    [allData, currentDateKey],
+  );
 
+  // ✅ Always merge updates into the latest currentData for this day
   const updateCurrentData = (updates: Partial<DayData>) => {
-    const updatedData = {
-      ...(allData[currentDateKey] || getInitialDayData()),
+    const updatedData: DayData = {
+      ...currentData,
       ...updates,
     };
     onDataChange(currentDateKey, updatedData);
