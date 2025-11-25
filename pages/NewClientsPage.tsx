@@ -1,167 +1,321 @@
-import Image from "next/image";
-import Link from "next/link";
+import React, { useState, useMemo } from 'react';
+import { NewClient, User, formatCurrency } from '../types';
+import Calendar from '../components/Calendar';
+import NewClientKPIs from '../components/NewClientKPIs';
+import AddClientModal from '../components/AddClientModal';
+import ClientCSVImporter from '../components/ClientCSVImporter';
 
-export default function LandingPage() {
-  return (
-    <div className="min-h-screen bg-[#0E0E11] text-white">
-      
-      {/* HEADER */}
-      <header className="flex items-center justify-between px-8 py-6 border-b border-white/10">
-        <div className="flex items-center">
-          <Image
-            src="/public-truexpanse-logo.png"
-            width={180}
-            height={60}
-            alt="TrueXpanse Logo"
-          />
-        </div>
-
-        <nav className="flex items-center gap-10 text-sm">
-          <Link href="#features" className="hover:text-red-500 transition">Features</Link>
-          <Link href="#pricing" className="hover:text-red-500 transition">Pricing</Link>
-          <Link 
-            href="/login" 
-            className="px-5 py-2 rounded-lg font-semibold bg-white text-black hover:bg-red-500 hover:text-white transition"
-          >
-            Login
-          </Link>
-        </nav>
-      </header>
-
-      {/* HERO SECTION */}
-      <section className="max-w-5xl mx-auto text-center px-8 py-24">
-        
-        <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
-          Your Team Is Closer to Consistency Than You Think
-        </h1>
-
-        <p className="text-xl text-white/70 max-w-3xl mx-auto">
-          Most sales teams don’t fail because of skill — they fail because they 
-          can’t stay consistent. The Massive Action Tracker removes the guesswork, 
-          builds iron-clad daily habits, and gives you complete visibility into 
-          KPIs, effort, pipeline and results in minutes a day.
-        </p>
-
-        <div className="mt-10 flex justify-center">
-          <Link
-            href="#pricing"
-            className="px-10 py-4 bg-red-600 rounded-xl font-semibold text-lg hover:bg-red-700 transition"
-          >
-            Start Your 7-Day Free Trial
-          </Link>
-        </div>
-      </section>
-
-      {/* FEATURES */}
-      <section id="features" className="py-24 bg-[#151518]">
-        <div className="max-w-6xl mx-auto px-8">
-          <h2 className="text-4xl font-bold text-center mb-16">Built for Teams Who Need Results This Quarter</h2>
-
-          <div className="grid md:grid-cols-3 gap-12">
-            <Feature
-              title="Daily Accountability That Sticks"
-              text="Turn KPI tracking into a fast, addictive habit. No spreadsheets. No chaos. Just clarity."
-            />
-            <Feature
-              title="Pipeline Tracking That Actually Helps"
-              text="See your entire pipeline at a glance with zero confusion. Every rep knows exactly what to do next."
-            />
-            <Feature
-              title="Manager Visibility in Real Time"
-              text="Instant access to rep performance, daily activity, and appointments — without chasing anyone down."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* PRICING */}
-      <section id="pricing" className="py-24 bg-[#0E0E11]">
-        <div className="max-w-6xl mx-auto px-8 text-center">
-          <h2 className="text-4xl font-bold mb-4">Choose Your Plan</h2>
-          <p className="text-white/70 mb-16">Simple pricing. Powerful results. No long-term contracts.</p>
-
-          <div className="grid md:grid-cols-3 gap-10">
-            <PriceCard
-              title="Starter"
-              price="$39/mo"
-              description="Perfect for individual operators or solo reps who want to build consistency fast."
-            />
-            <PriceCard
-              title="Team"
-              price="$149/mo"
-              highlight
-              description="Up to 10 users. Built for sales teams who want accountability, visibility, and results."
-            />
-            <PriceCard
-              title="Team + Coaching"
-              price="$399/mo"
-              description="Up to 10 users plus one monthly group coaching call with Don."
-            />
-          </div>
-
-          <div className="mt-16">
-            <Link 
-              href="/signup"
-              className="px-10 py-4 text-lg font-semibold bg-red-600 rounded-xl hover:bg-red-700 transition"
-            >
-              Start Your 7-Day Free Trial
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="text-center py-10 text-white/40 text-sm">
-        © {new Date().getFullYear()} TrueXpanse. All rights reserved.
-      </footer>
-    </div>
-  );
+interface NewClientsPageProps {
+  newClients: NewClient[];
+  onSaveClient: (client: NewClient) => Promise<void>;
+  selectedDate: Date;
+  onDateChange: (date: Date) => void;
+  loggedInUser: User;
+  users: User[];
 }
 
-/* COMPONENTS */
-
-function Feature({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="bg-[#1D1D21] p-8 rounded-xl border border-white/5">
-      <h3 className="text-2xl font-bold mb-3">{title}</h3>
-      <p className="text-white/60 leading-relaxed">{text}</p>
-    </div>
-  );
+interface ClientCardProps {
+  client: NewClient;
+  onClick: () => void;
+  userColor?: string;
 }
 
-function PriceCard({
-  title,
-  price,
-  description,
-  highlight,
-}: {
-  title: string;
-  price: string;
-  description: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={`p-8 rounded-2xl border transition ${
-        highlight
-          ? "border-red-600 bg-white/5 scale-105"
-          : "border-white/10 bg-white/5"
-      }`}
-    >
-      <h3 className="text-2xl font-bold mb-2">{title}</h3>
-      <p className="text-4xl font-bold mb-4">{price}</p>
-      <p className="text-white/60 mb-8">{description}</p>
-
-      <Link
-        href="/signup"
-        className={`block py-3 rounded-lg font-semibold transition ${
-          highlight
-            ? "bg-red-600 hover:bg-red-700"
-            : "bg-white text-black hover:bg-red-600 hover:text-white"
-        }`}
+const ClientCard: React.FC<ClientCardProps> = ({
+  client,
+  onClick,
+  userColor = '#6b7280',
+}) => (
+  <div
+    onClick={onClick}
+    className="bg-brand-light-bg dark:bg-brand-gray/50 p-3 rounded-md border border-brand-light-border dark:border-brand-gray shadow-sm cursor-pointer hover:border-brand-blue flex items-center space-x-3 transition-all"
+  >
+    <div className="flex-shrink-0">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-8 w-8"
+        viewBox="0 0 20 20"
+        fill={userColor}
       >
-        Get Started
-      </Link>
+        <path
+          fillRule="evenodd"
+          d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+          clipRule="evenodd"
+        />
+      </svg>
     </div>
+    <div className="flex-grow overflow-hidden">
+      <p
+        className="font-bold text-sm text-brand-light-text dark:text-white truncate"
+        title={client.name}
+      >
+        {client.name}
+      </p>
+      <p className="text-xs text-brand-lime font-semibold">
+        {formatCurrency(client.initialAmountCollected)}
+      </p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        Closed: {client.closeDate}
+      </p>
+    </div>
+  </div>
+);
+
+const NewClientsPage: React.FC<NewClientsPageProps> = ({
+  newClients,
+  onSaveClient,
+  selectedDate,
+  onDateChange,
+  loggedInUser,
+  users,
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<NewClient | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRepId, setSelectedRepId] = useState<string>('all');
+
+  const userColors = [
+    '#2F81F7',
+    '#34D399',
+    '#FBBF24',
+    '#A855F7',
+    '#E53E3E',
+    '#EC4899',
+    '#06B6D4',
+  ];
+
+  // Only active sales reps are used for filters & colors
+  const salesReps = useMemo(
+    () => users.filter((u) => u.role === 'Sales Rep' && u.status === 'Active'),
+    [users]
   );
-}
+
+  const userColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    salesReps.forEach((user, index) => {
+      map[user.id] = userColors[index % userColors.length];
+    });
+    return map;
+  }, [salesReps]);
+
+  const filteredClients = useMemo(() => {
+    const sortedClients = [...newClients].sort(
+      (a, b) =>
+        new Date(b.closeDate).getTime() - new Date(a.closeDate).getTime()
+    );
+
+    const repFiltered =
+      selectedRepId === 'all'
+        ? sortedClients
+        : sortedClients.filter((client) => client.userId === selectedRepId);
+
+    if (!searchTerm.trim()) return repFiltered;
+
+    const lowercasedFilter = searchTerm.toLowerCase();
+    const numericSearchTerm = searchTerm.replace(/[^\d]/g, '');
+
+    return repFiltered.filter((client) => {
+      const name = client.name?.toLowerCase() || '';
+      const company = client.company?.toLowerCase() || '';
+      const email = client.email?.toLowerCase() || '';
+      const clientPhoneNumeric = client.phone?.replace(/[^\d]/g, '') || '';
+
+      return (
+        name.includes(lowercasedFilter) ||
+        company.includes(lowercasedFilter) ||
+        email.includes(lowercasedFilter) ||
+        (numericSearchTerm && clientPhoneNumeric.includes(numericSearchTerm))
+      );
+    });
+  }, [newClients, searchTerm, selectedRepId]);
+
+  const handleOpenModalForNew = () => {
+    setEditingClient(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenModalForEdit = (client: NewClient) => {
+    setEditingClient(client);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveClient = (clientData: NewClient) => {
+    const payload: NewClient = String(clientData.id).startsWith('manual-')
+      ? { ...clientData, userId: loggedInUser.id }
+      : clientData;
+
+    onSaveClient(payload);
+    setIsModalOpen(false);
+    setEditingClient(null);
+  };
+
+  const handleCSVImport = (importedData: Array<Partial<NewClient>>) => {
+    importedData.forEach((client, index) => {
+      const newClient: NewClient = {
+        id: `manual-${Date.now()}-${index}`, // temporary ID; DB will replace it
+        name: client.name || 'Unnamed Client',
+        company: client.company || '',
+        phone: client.phone || '',
+        email: client.email || '',
+        address: client.address || '',
+        salesProcessLength: client.salesProcessLength || '',
+        monthlyContractValue: Number(client.monthlyContractValue) || 0,
+        initialAmountCollected: Number(client.initialAmountCollected) || 0,
+        closeDate:
+          client.closeDate &&
+          !isNaN(new Date(client.closeDate).getTime())
+            ? client.closeDate
+            : new Date().toISOString().split('T')[0],
+        stage: client.stage || 'Job Completed',
+        userId: loggedInUser.id,
+      };
+
+      onSaveClient(newClient);
+    });
+
+    alert(`Successfully imported ${importedData.length} new clients.`);
+  };
+
+  return (
+    <>
+      <AddClientModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveClient}
+        client={editingClient}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* LEFT COLUMN */}
+        <div className="lg:col-span-3 space-y-8">
+          <Calendar selectedDate={selectedDate} onDateChange={onDateChange} />
+          <NewClientKPIs newClients={newClients} />
+
+          <div className="bg-brand-light-card dark:bg-brand-navy p-4 rounded-lg border border-brand-light-border dark:border-brand-gray">
+            <h3 className="text-sm font-bold text-brand-red uppercase mb-3">
+              Filter by Sales Rep
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedRepId('all')}
+                className={`text-xs font-bold py-1 px-3 rounded-full transition-colors ${
+                  selectedRepId === 'all'
+                    ? 'bg-brand-blue text-white'
+                    : 'bg-gray-200 dark:bg-brand-gray text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                All Reps
+              </button>
+
+              {salesReps.map((rep) => {
+                const firstName =
+                  (rep.name || '').trim().split(' ')[0] || 'Rep';
+                const chipColor = userColorMap[rep.id] || '#6b7280';
+
+                return (
+                  <button
+                    key={rep.id}
+                    onClick={() => setSelectedRepId(rep.id)}
+                    className={`flex items-center gap-2 text-xs font-bold py-1 px-3 rounded-full transition-colors ${
+                      selectedRepId === rep.id
+                        ? 'bg-brand-blue text-white'
+                        : 'bg-gray-2 00 dark:bg-brand-gray text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: chipColor }}
+                    ></span>
+                    {firstName}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className="lg:col-span-9">
+          <div className="bg-brand-light-card dark:bg-brand-navy p-6 rounded-lg border border-brand-light-border dark:border-brand-gray">
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+              <h1 className="text-3xl font-bold text-brand-light-text dark:text-white">
+                New Clients
+              </h1>
+              <div className="flex items-center gap-2">
+                <ClientCSVImporter onImport={handleCSVImport} />
+                <button
+                  onClick={handleOpenModalForNew}
+                  className="bg-brand-lime text-brand-ink font-bold py-2 px-4 rounded-lg hover:bg-green-400 transition text-sm whitespace-nowrap"
+                >
+                  + Add Client
+                </button>
+              </div>
+            </div>
+
+            {/* Search */}
+            <div className="mb-4">
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-gray-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search clients by name, company, email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-brand-light-bg dark:bg-brand-ink border border-brand-light-border dark:border-brand-gray rounded-lg text-brand-light-text dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                />
+              </div>
+            </div>
+
+            {/* Client cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredClients.map((client) => (
+                <ClientCard
+                  key={client.id}
+                  client={client}
+                  onClick={() => handleOpenModalForEdit(client)}
+                  userColor={
+                    client.userId ? userColorMap[client.userId] : undefined
+                  }
+                />
+              ))}
+            </div>
+
+            {/* Empty states */}
+            {newClients.length > 0 && filteredClients.length === 0 && (
+              <div className="text-center py-10">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No clients match your search.
+                </p>
+              </div>
+            )}
+
+            {newClients.length === 0 && (
+              <div className="text-center py-10">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No new clients yet.
+                </p>
+                <p className="text-sm text-gray-400 dark:text-gray-500">
+                  Convert a hot lead or add one manually!
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default NewClientsPage;
