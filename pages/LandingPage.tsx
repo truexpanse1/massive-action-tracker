@@ -97,9 +97,9 @@ const LandingPage: React.FC = () => {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-[3.6rem] font-black leading-tight tracking-tight mb-5">
-            Slash pipeline anxiety and<br className="hidden sm:block" />
+            Slash sales anxiety<br className="hidden sm:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 via-cyan-400 to-indigo-500">
-              10X your sales activity
+              with a thriving pipeline
             </span>{' '}
             in 30 days.
           </h1>
