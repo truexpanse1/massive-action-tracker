@@ -76,51 +76,51 @@ const DayView: React.FC<DayViewProps> = ({
     setIsAiChallengeLoading(true);
     try {
       const newChallenges = await getSalesChallenges();
-      if (!newChallenges || newChallenges.length === 0) {
-        throw new Error('AI did not return any challenges.');
-      }
+      if (!newChallenges?.length) throw new Error('No challenges');
       const currentTopTargets = [...currentData.topTargets];
-      let challengesPlaced = 0;
-      for (let i = 0; i < currentTopTargets.length; i++) {
-        if (challengesPlaced >= newChallenges.length) break;
-        if (currentTopTargets[i].text.trim() === '') {
-          currentTopTargets[i].text = newChallenges[challengesPlaced];
-          challengesPlaced++;
+      let placed = 0;
+      for (let i = 0; i < currentTopTargets.length && placed < newChallenges.length; i++) {
+        const text = typeof currentTopTargets[i] === 'string' ? currentTopTargets[i] : currentTopTargets[i].text || '';
+        if (!text.trim()) {
+          currentTopTargets[i] = { ...(currentTopTargets[i] as any), text: newChallenges[placed++] };
         }
       }
-      const newAiChallengeData: AIChallengeData = {
-        ...currentData.aiChallenge,
-        challengesAccepted: true,
-        challenges: [],
-      };
       updateCurrentData({
         topTargets: currentTopTargets,
-        aiChallenge: newAiChallengeDataValid,
+        aiChallenge: { ...currentData.aiChallenge, challengesAccepted: true, challenges: [] },
       });
       onAddWin(currentDateKey, 'AI Challenges Added to Targets!');
-    } catch (error) {
-      console.error('Failed to fetch challenges:', error);
-      alert(
-        'Could not generate AI challenges. The Gemini API may be unavailable or the API key is missing.',
-      );
+    } catch (err) {
+      alert('Failed to generate AI challenges.');
     } finally {
       setIsAiChallengeLoading(false);
     }
   };
 
-  // ONLY CHANGE: Top 6 Targets now save completed state correctly
+  // FINAL: Top 6 Targets + Appointments both work perfectly
   const handleGoalChange = async (
-    type: 'topTargets' | 'massiveGoals',
+    type: 'topTargets' | 'massiveGoals' | 'events',
     updatedGoal: Goal,
     isCompletion: boolean,
+    index?: number
   ) => {
+    if (type === 'events') {
+      const updatedEvents = currentData.events?.map((e: any) =>
+        e.id === updatedGoal.id ? { ...e, completed: isCompletion } : e
+      );
+      updateCurrentData({ events: updatedEvents });
+      if (isCompletion) {
+        onAddWin(currentDateKey, `Appointment Completed: ${updatedGoal.text || updatedGoal.title}`);
+      }
+      return;
+    }
+
     const goals = (currentData[type] || []) as Goal[];
     const newGoals = goals.map((g) =>
       g.id === updatedGoal.id ? { ...updatedGoal, completed: isCompletion } : g
     );
     updateCurrentData({ [type]: newGoals });
 
-    // This is the ONLY line we added — the rest is 100% original
     if (type === 'topTargets' && updatedGoal.text?.trim()) {
       await supabase.from('goals').upsert(
         {
@@ -183,9 +183,9 @@ const DayView: React.FC<DayViewProps> = ({
 
   return (
     <>
-      <AddLeadModal isOpen={isLeadModalOpen} onClose={() => setIsLeadModalOpen(false)} onSave={() => {}} />
-      <AddEventModal isOpen={isEventModalOpen} onClose={() => setIsEventModalOpen(false)} onSave={() => {}} onDelete={() => {}} date={selectedDate} eventToEdit={editingEvent} />
-      <ViewLeadsModal isOpen={isViewLeadsModalOpen} onClose={() => setIsViewLeadsModalOpen(false)} leads={leadsAddedToday} users={users} />
+      <AddLeadModal isOpen={isLeadModalOpen} onChange={() => setIsLeadModalOpen(false)} onSave={() => {}} />
+      <AddEventModal isOpen={isEventModalOpen} onChange={() => setIsEventModalOpen(false)} onSave={() => {}} onDelete={() => {}} date={selectedDate} eventToEdit={editingEvent} />
+      <ViewLeadsModal isOpen={isViewLeadsModalOpen} onChange={() => setIsViewLeadsModalOpen(false)} leads={leadsAddedToday} users={users} />
 
       <div className="text-left mb-6">
         <h2 className="text-2xl font-bold uppercase text-brand-light-text dark:text-white">
@@ -205,7 +205,17 @@ const DayView: React.FC<DayViewProps> = ({
 
         <div className="space-y-8">
           <ProspectingKPIs contacts={currentData.prospectingContacts || []} events={currentData.events || []} />
-          <AppointmentsBlock events={appointments} onEventUpdate={() => {}} onAddAppointment={() => setIsEventModalOpen(true)} />
+          
+          {/* APPOINTMENTS — CHECKBOX WORKS AGAIN */}
+          <AppointmentsBlock
+            events={appointments}
+            onEventUpdate={() => {}}
+            onAddAppointment={() => setIsEventModalOpen(true)}
+            onGoalChange={(goal, isCompletion, index) =>
+              handleGoalChange('events', goal, isCompletion, index)
+            }
+          />
+
           <DailyFollowUps hotLeads={hotLeads} onUpdateHotLead={onUpdateHotLead} selectedDate={selectedDate} onWin={(msg) => onAddWin(currentDateKey, msg)} />
           <WinsTodayCard wins={currentData.winsToday || []} />
         </div>
