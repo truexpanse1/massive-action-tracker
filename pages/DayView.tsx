@@ -16,7 +16,6 @@ import Calendar from '../components/Calendar';
 import RevenueCard from '../components/RevenueCard';
 import AIChallengeCard from '../components/AIChallengeCard';
 import ProspectingKPIs from '../components/ProspectingKPIs';
-import AppointmentsBlock from '../components/AppointmentsBlock';
 import GoalsBlock from '../components/GoalsBlock';
 import NewLeadsBlock from '../components/NewLeadsBlock';
 import DailyFollowUps from '../components/DailyFollowUps';
@@ -98,26 +97,16 @@ const DayView: React.FC<DayViewProps> = ({
   };
 
   const handleGoalChange = async (
-    type: 'topTargets' | 'massiveGoals' | 'events',
+    type: 'topTargets' | 'massiveGoals',
     updatedGoal: Goal,
     isCompletion: boolean,
-    index?: number
   ) => {
-    if (type === 'events') {
-      const updatedEvents = currentData.events?.map((e: any) =>
-        e.id === updatedGoal.id ? { ...e, completed: isCompletion } : e
-      );
-      updateCurrentData({ events: updatedEvents });
-      if (isCompletion) {
-        onAddWin(currentDateKey, `Appointment Completed: ${updatedGoal.text || updatedGoal.title || 'Appointment'}`);
-      }
-      return;
-    }
     const goals = (currentData[type] || []) as Goal[];
     const newGoals = goals.map((g) =>
       g.id === updatedGoal.id ? { ...updatedGoal, completed: isCompletion } : g
     );
     updateCurrentData({ [type]: newGoals });
+
     if (type === 'topTargets' && updatedGoal.text?.trim()) {
       await supabase.from('goals').upsert(
         {
@@ -130,6 +119,7 @@ const DayView: React.FC<DayViewProps> = ({
         { onConflict: 'user_id,goal_date,text', ignoreDuplicates: false }
       );
     }
+
     if (isCompletion && updatedGoal.text?.trim()) {
       onAddWin(currentDateKey, `Target Completed: ${updatedGoal.text}`);
     }
@@ -201,16 +191,47 @@ const DayView: React.FC<DayViewProps> = ({
 
         <div className="space-y-8">
           <ProspectingKPIs contacts={currentData.prospectingContacts || []} events={currentData.events || []} />
-          
-          {/* THIS IS THE ONLY LINE THAT MATTERS — INDEX INCLUDED */}
-          <AppointmentsBlock
-            events={appointments}
-            onEventUpdate={() => {}}
-            onAddAppointment={() => setIsEventModalOpen(true)}
-            onGoalChange={(goal, isCompletion, index) => 
-              handleGoalChange('events', goal, isCompletion, index)
-            }
-          />
+
+          {/* WORKING APPOINTMENTS — CHECKBOXES FULLY FUNCTIONAL */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-red-600">TODAY'S APPOINTMENTS</h3>
+              <button
+                onClick={() => setIsEventModalOpen(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700"
+              >
+                + Add
+              </button>
+            </div>
+            {appointments.length === 0 ? (
+              <p className="text-gray-500 italic">No appointments today.</p>
+            ) : (
+              <div className="space-y-3">
+                {appointments.map((event: any) => (
+                  <div key={event.id} className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={!!event.completed}
+                      onChange={() => {
+                        const updatedEvents = currentData.events?.map((e: any) =>
+                          e.id === event.id ? { ...e, completed: !e.completed } : e
+                        );
+                        updateCurrentData({ events: updatedEvents });
+                        if (!event.completed) {
+                          onAddWin(currentDateKey, `Appointment Completed: ${event.title || event.text || 'Appointment'}`);
+                        }
+                      }}
+                      className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                    />
+                    <div className={event.completed ? 'line-through text-gray-500' : ''}>
+                      <p className="font-medium">{event.title || event.text || 'Appointment'}</p>
+                      <p className="text-sm text-gray-600">{event.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <DailyFollowUps hotLeads={hotLeads} onUpdateHotLead={onUpdateHotLead} selectedDate={selectedDate} onWin={(msg) => onAddWin(currentDateKey, msg)} />
           <WinsTodayCard wins={currentData.winsToday || []} />
