@@ -207,15 +207,14 @@ const DayView: React.FC<DayViewProps> = ({
           <ProspectingKPIs contacts={currentData.prospectingContacts || []} events={currentData.events || []} />
           
           {/* APPOINTMENTS — CHECKBOX NOW WORKS 100% */}
-          <AppointmentsBlock
-            events={appointments}
-            onEventUpdate={() => {}}
-            onAddAppointment={() => setIsEventModalOpen(true)}
-            onGoalChange={(goal, isCompletion, index) => 
-              handleGoalChange('events', goal, isCompletion, index)
-            }
-          />
-
+         <AppointmentsBlock
+  events={appointments}
+  onEventUpdate={() => {}}
+  onAddAppointment={() => setIsEventModalOpen(true)}
+  onGoalChange={(goal, isCompletion, index) => 
+    handleGoalChange('events', goal, isCompletion, index)
+  }
+/>
           <DailyFollowUps hotLeads={hotLeads} onUpdateHotLead={onUpdateHotLead} selectedDate={selectedDate} onWin={(msg) => onAddWin(currentDateKey, msg)} />
           <WinsTodayCard wins={currentData.winsToday || []} />
         </div>
