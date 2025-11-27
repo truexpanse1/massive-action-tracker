@@ -39,6 +39,23 @@ interface DayViewProps {
   user: User;
 }
 
+/**
+ * Ensure times are always shown in 12-hour format with AM/PM.
+ * Example: "13:30" -> "1:30 PM"
+ */
+const formatTime12Hour = (time?: string): string => {
+  if (!time) return '';
+  const [hourStr, minuteStr = '00'] = time.split(':');
+  let hour = parseInt(hourStr, 10);
+  if (Number.isNaN(hour)) return time;
+
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  if (hour === 0) hour = 12;
+  else if (hour > 12) hour -= 12;
+
+  return `${hour}:${minuteStr} ${suffix}`;
+};
+
 const DayView: React.FC<DayViewProps> = ({
   allData,
   onDataChange,
@@ -82,7 +99,11 @@ const DayView: React.FC<DayViewProps> = ({
     const currentMonth = selectedDate.getMonth();
     const currentYear = selectedDate.getFullYear();
 
-    let today = 0, week = 0, month = 0, ytd = 0, mcv = 0;
+    let today = 0,
+      week = 0,
+      month = 0,
+      ytd = 0,
+      mcv = 0;
 
     (transactions || []).forEach((t) => {
       const transactionDate = new Date(t.date + 'T00:00:00');
@@ -175,7 +196,11 @@ const DayView: React.FC<DayViewProps> = ({
 
   return (
     <>
-      <AddLeadModal isOpen={isLeadModalOpen} onClose={() => setIsLeadModalOpen(false)} onSave={() => {}} />
+      <AddLeadModal
+        isOpen={isLeadModalOpen}
+        onClose={() => setIsLeadModalOpen(false)}
+        onSave={() => {}}
+      />
       <AddEventModal
         isOpen={isEventModalOpen}
         onClose={() => {
@@ -187,7 +212,12 @@ const DayView: React.FC<DayViewProps> = ({
         date={selectedDate}
         eventToEdit={editingEvent}
       />
-      <ViewLeadsModal isOpen={isViewLeadsModalOpen} onClose={() => setIsViewLeadsModalOpen(false)} leads={leadsAddedToday} users={users} />
+      <ViewLeadsModal
+        isOpen={isViewLeadsModalOpen}
+        onClose={() => setIsViewLeadsModalOpen(false)}
+        leads={leadsAddedToday}
+        users={users}
+      />
 
       <div className="text-left mb-6">
         <h2 className="text-2xl font-bold uppercase text-brand-light-text dark:text-white">
@@ -202,13 +232,20 @@ const DayView: React.FC<DayViewProps> = ({
         <div className="space-y-8">
           <Calendar selectedDate={selectedDate} onDateChange={onDateChange} />
           <RevenueCard data={calculatedRevenue} onNavigate={onNavigateToRevenue} />
-          <AIChallengeCard data={currentData.aiChallenge} isLoading={isAiChallengeLoading} onAcceptChallenge={handleAcceptAIChallenge} />
+          <AIChallengeCard
+            data={currentData.aiChallenge}
+            isLoading={isAiChallengeLoading}
+            onAcceptChallenge={handleAcceptAIChallenge}
+          />
         </div>
 
         <div className="space-y-8">
-          <ProspectingKPIs contacts={currentData.prospectingContacts || []} events={currentData.events || []} />
+          <ProspectingKPIs
+            contacts={currentData.prospectingContacts || []}
+            events={currentData.events || []}
+          />
 
-          {/* SIMPLE, WORKING APPOINTMENTS — FROM THE GOLDEN ERA */}
+          {/* TODAY'S APPOINTMENTS */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-red-600">TODAY'S APPOINTMENTS</h3>
@@ -231,21 +268,34 @@ const DayView: React.FC<DayViewProps> = ({
                   <div key={event.id} className="flex items-center space-x-3">
                     <input
                       type="checkbox"
+                      className="w-5 h-5 form-checkbox text-green-600 rounded focus:ring-green-500"
                       checked={!!event.completed}
-                      onChange={async () => {
-                        const updatedEvents = currentData.events!.map((e) =>
-                          e.id === event.id ? { ...e, completed: !e.completed } : e
+                      onChange={async (e) => {
+                        const newCompleted = e.target.checked;
+
+                        const updatedEvents = (currentData.events || []).map((evt) =>
+                          evt.id === event.id ? { ...evt, completed: newCompleted } : evt
                         );
+
                         await updateCurrentData({ events: updatedEvents });
-                        if (!event.completed) {
-                          onAddWin(currentDateKey, `Appointment Completed: ${event.title || 'Appointment'}`);
+
+                        if (newCompleted) {
+                          onAddWin(
+                            currentDateKey,
+                            `Appointment Completed: ${event.title || 'Appointment'}`
+                          );
+                          // 🔁 This is also where your follow-up campaign trigger
+                          // can hook in, if you need to call another function.
                         }
                       }}
-                      className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
                     />
                     <div className={event.completed ? 'line-through text-gray-500' : ''}>
                       <p className="font-medium">{event.title || 'Appointment'}</p>
-                      {event.time && <p className="text-sm text-gray-600">{event.time}</p>}
+                      {event.time && (
+                        <p className="text-sm text-gray-600">
+                          {formatTime12Hour(event.time)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -253,7 +303,12 @@ const DayView: React.FC<DayViewProps> = ({
             )}
           </div>
 
-          <DailyFollowUps hotLeads={hotLeads} onUpdateHotLead={onUpdateHotLead} selectedDate={selectedDate} onWin={(msg) => onAddWin(currentDateKey, msg)} />
+          <DailyFollowUps
+            hotLeads={hotLeads}
+            onUpdateHotLead={onUpdateHotLead}
+            selectedDate={selectedDate}
+            onWin={(msg) => onAddWin(currentDateKey, msg)}
+          />
           <WinsTodayCard wins={currentData.winsToday || []} />
         </div>
 
@@ -261,12 +316,16 @@ const DayView: React.FC<DayViewProps> = ({
           <GoalsBlock
             title="Today's Top 6 Targets"
             goals={currentData.topTargets || []}
-            onGoalChange={(goal, isCompletion) => handleGoalChange('topTargets', goal, isCompletion)}
+            onGoalChange={(goal, isCompletion) =>
+              handleGoalChange('topTargets', goal, isCompletion)
+            }
           />
           <GoalsBlock
             title="Massive Action Goals"
             goals={currentData.massiveGoals || []}
-            onGoalChange={(goal, isCompletion) => handleGoalChange('massiveGoals', goal, isCompletion)}
+            onGoalChange={(goal, isCompletion) =>
+              handleGoalChange('massiveGoals', goal, isCompletion)
+            }
             highlight
           />
           <NewLeadsBlock
