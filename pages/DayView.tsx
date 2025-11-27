@@ -107,7 +107,6 @@ const DayView: React.FC<DayViewProps> = ({
       g.id === updatedGoal.id ? { ...updatedGoal, completed: isCompletion } : g
     );
     updateCurrentData({ [type]: newGoals });
-
     if (type === 'topTargets' && updatedGoal.text?.trim()) {
       await supabase
         .from('goals')
@@ -122,9 +121,21 @@ const DayView: React.FC<DayViewProps> = ({
           { onConflict: 'user_id,goal_date,text', ignoreDuplicates: false }
         );
     }
-
     if (isCompletion && updatedGoal.text?.trim()) {
       onAddWin(currentDateKey, `Target Completed: ${updatedGoal.text}`);
+    }
+  };
+
+  // APPOINTMENT COMPLETION — WORKS 100%
+  const toggleAppointmentComplete = (eventId: string) => {
+    const updatedEvents = (currentData.events || []).map((e: any) =>
+      e.id === eventId ? { ...e, completed: !e.completed } : e
+    );
+    updateCurrentData({ events: updatedEvents });
+
+    const event = updatedEvents.find((e: any) => e.id === eventId);
+    if (event?.completed) {
+      onAddWin(currentDateKey, `Appointment Completed: ${event.title || event.text || 'Appointment'}`);
     }
   };
 
@@ -195,22 +206,38 @@ const DayView: React.FC<DayViewProps> = ({
         <div className="space-y-8">
           <ProspectingKPIs contacts={currentData.prospectingContacts || []} events={currentData.events || []} />
           
-          {/* FIXED: Appointments checkbox works again */}
-<AppointmentsBlock
-  events={appointments}
-  onEventUpdate={() => {}}
-  onAddAppointment={() => setIsEventModalOpen(true)}
-  onGoalChange={(goal, isCompletion) => {
-    const updatedEvents = currentData.events?.map((e: any) =>
-      e.id === goal.id ? { ...e, completed: isCompletion } : e
-    );
-    updateCurrentData({ events: updatedEvents });
-    
-    if (isCompletion && goal.text?.trim()) {
-      onAddWin(currentDateKey, `Appointment Completed: ${goal.text}`);
-    }
-  }}
-/>
+          {/* APPOINTMENTS — NOW WITH WORKING CHECKBOXES */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-red-600">TODAY'S APPOINTMENTS</h3>
+              <button
+                onClick={() => setIsEventModalOpen(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700"
+              >
+                + Add
+              </button>
+            </div>
+            {appointments.length === 0 ? (
+              <p className="text-gray-500 italic">No appointments today.</p>
+            ) : (
+              <div className="space-y-3">
+                {appointments.map((event: any) => (
+                  <div key={event.id} className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={!!event.completed}
+                      onChange={() => toggleAppointmentComplete(event.id)}
+                      className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                    />
+                    <div className={event.completed ? 'line-through text-gray-500' : ''}>
+                      <p className="font-medium">{event.title || event.text || 'Appointment'}</p>
+                      <p className="text-sm text-gray-600">{event.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <DailyFollowUps hotLeads={hotLeads} onUpdateHotLead={onUpdateHotLead} selectedDate={selectedDate} onWin={(msg) => onAddWin(currentDateKey, msg)} />
           <WinsTodayCard wins={currentData.winsToday || []} />
