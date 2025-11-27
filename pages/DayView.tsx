@@ -8,7 +8,6 @@ import {
   Transaction,
   User,
   getInitialDayData,
-  AIChallengeData,
   formatCurrency,
 } from '../types';
 import { getSalesChallenges } from '../services/geminiService';
@@ -39,20 +38,15 @@ interface DayViewProps {
   user: User;
 }
 
-/**
- * Ensure times are always shown in 12-hour format with AM/PM.
- * Example: "13:30" -> "1:30 PM"
- */
+/** 24h → 12h time formatting e.g. "15:00" -> "3:00 PM" */
 const formatTime12Hour = (time?: string): string => {
   if (!time) return '';
   const [hourStr, minuteStr = '00'] = time.split(':');
   let hour = parseInt(hourStr, 10);
   if (Number.isNaN(hour)) return time;
-
   const suffix = hour >= 12 ? 'PM' : 'AM';
   if (hour === 0) hour = 12;
   else if (hour > 12) hour -= 12;
-
   return `${hour}:${minuteStr} ${suffix}`;
 };
 
@@ -80,13 +74,14 @@ const DayView: React.FC<DayViewProps> = ({
   const currentDateKey = getDateKey(selectedDate);
   const currentData: DayData = allData[currentDateKey] || getInitialDayData();
 
-  // 🔹 Local copy of events so checkbox state doesn't "snap back" on re-render
+  /** 🔹 Local events so a click doesn’t instantly get overwritten */
   const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(currentData.events || []);
 
-  // Keep localEvents in sync whenever the date changes or new data arrives
+  /** When the date changes, reset local events to that day’s events */
   useEffect(() => {
-    setLocalEvents(currentData.events || []);
-  }, [currentData.events]);
+    const newData: DayData = allData[currentDateKey] || getInitialDayData();
+    setLocalEvents(newData.events || []);
+  }, [currentDateKey, allData]);
 
   const updateCurrentData = async (updates: Partial<DayData>) => {
     const updatedData: DayData = {
@@ -136,6 +131,7 @@ const DayView: React.FC<DayViewProps> = ({
     };
   }, [transactions, selectedDate]);
 
+  /** Only pull appointments from localEvents */
   const appointments = useMemo(() => {
     return (localEvents || [])
       .filter((e): e is CalendarEvent => e?.type === 'Appointment')
@@ -160,7 +156,7 @@ const DayView: React.FC<DayViewProps> = ({
           currentTopTargets[i] = { ...goal, text: newChallenges[placed++] };
         }
       }
-      updateCurrentData({
+      await updateCurrentData({
         topTargets: currentTopTargets,
         aiChallenge: { ...currentData.aiChallenge, challengesAccepted: true, challenges: [] },
       });
@@ -181,14 +177,14 @@ const DayView: React.FC<DayViewProps> = ({
     const newGoals = goals.map((g) =>
       g.id === updatedGoal.id ? { ...updatedGoal, completed: isCompletion } : g
     );
-    updateCurrentData({ [type]: newGoals });
+    await updateCurrentData({ [type]: newGoals });
     if (isCompletion && updatedGoal.text?.trim()) {
       onAddWin(currentDateKey, `Target Completed: ${updatedGoal.text}`);
     }
   };
 
   const handleEventSaved = (savedEvent: CalendarEvent) => {
-    const existingEvents = currentData.events || [];
+    const existingEvents = localEvents || [];
     const updatedEvents = editingEvent
       ? existingEvents.map((e) => (e.id === savedEvent.id ? savedEvent : e))
       : [...existingEvents, savedEvent];
@@ -200,7 +196,7 @@ const DayView: React.FC<DayViewProps> = ({
   };
 
   const handleEventDelete = (eventId: string) => {
-    const updatedEvents = (currentData.events || []).filter((e) => e.id !== eventId);
+    const updatedEvents = (localEvents || []).filter((e) => e.id !== eventId);
     setLocalEvents(updatedEvents);
     updateCurrentData({ events: updatedEvents });
   };
@@ -276,7 +272,7 @@ const DayView: React.FC<DayViewProps> = ({
             ) : (
               <div className="space-y-3">
                 {appointments.map((event) => {
-                  // Try to pull a client name from event if available
+                  // Prefer the client/contact name from the event
                   const clientName =
                     (event as any).clientName ||
                     (event as any).contactName ||
@@ -295,22 +291,22 @@ const DayView: React.FC<DayViewProps> = ({
                         onChange={async (e) => {
                           const newCompleted = e.target.checked;
 
-                          // Update local state immediately so the UI stays checked
+                          // 1) Update local state immediately so it stays checked
                           const updatedEvents = (localEvents || []).map((evt) =>
                             evt.id === event.id ? { ...evt, completed: newCompleted } : evt
                           );
                           setLocalEvents(updatedEvents);
 
-                          // Persist to parent / backend
+                          // 2) Persist to parent / backend
                           await updateCurrentData({ events: updatedEvents });
 
+                          // 3) Fire win + followup trigger when completed
                           if (newCompleted) {
                             onAddWin(
                               currentDateKey,
                               `Appointment Completed: ${event.title || 'Appointment'}`
                             );
-                            // 🔁 This is also where your follow-up campaign trigger
-                            // can hook in, if you need to call another function.
+                            // <=== hook follow-up campaign trigger here if needed
                           }
                         }}
                       />
