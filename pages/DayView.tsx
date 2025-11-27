@@ -63,14 +63,21 @@ const DayView: React.FC<DayViewProps> = ({
   const currentDateKey = getDateKey(selectedDate);
   const currentData: DayData = allData[currentDateKey] || getInitialDayData();
 
-  // Local copy of events so the checkbox doesn't snap back
+  // 🔹 Local state mirrors DayData for the *current date*
   const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(currentData.events || []);
+  const [localTopTargets, setLocalTopTargets] = useState<Goal[]>(currentData.topTargets || []);
+  const [localMassiveGoals, setLocalMassiveGoals] = useState<Goal[]>(currentData.massiveGoals || []);
 
-  // When the selected date changes, reset local events
+  // When the selected day changes, load that day's data into local state
   useEffect(() => {
     const newData: DayData = allData[currentDateKey] || getInitialDayData();
     setLocalEvents(newData.events || []);
-  }, [currentDateKey, allData]);
+    setLocalTopTargets(newData.topTargets || []);
+    setLocalMassiveGoals(newData.massiveGoals || []);
+    // ✅ we intentionally only depend on currentDateKey so we don't overwrite
+    // local changes during saves for the same day
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentDateKey]);
 
   const updateCurrentData = async (updates: Partial<DayData>) => {
     const updatedData: DayData = {
@@ -120,6 +127,7 @@ const DayView: React.FC<DayViewProps> = ({
     };
   }, [transactions, selectedDate]);
 
+  // Use localEvents for appointments
   const appointments = useMemo(() => {
     return (localEvents || [])
       .filter((e): e is CalendarEvent => e?.type === 'Appointment')
@@ -134,20 +142,25 @@ const DayView: React.FC<DayViewProps> = ({
   const handleAcceptAIChallenge = async () => {
     setIsAiChallengeLoading(true);
     try {
+      // Fill *local* top targets with AI challenges
       const newChallenges = await getSalesChallenges();
       if (!newChallenges?.length) throw new Error('No challenges');
-      const currentTopTargets = [...(currentData.topTargets || [])];
+
+      const currentTopTargets = [...localTopTargets];
       let placed = 0;
       for (let i = 0; i < currentTopTargets.length && placed < newChallenges.length; i++) {
-        const goal = currentTopTargets[i] as Goal;
+        const goal = currentTopTargets[i];
         if (!goal.text?.trim()) {
           currentTopTargets[i] = { ...goal, text: newChallenges[placed++] };
         }
       }
+
+      setLocalTopTargets(currentTopTargets);
       await updateCurrentData({
         topTargets: currentTopTargets,
         aiChallenge: { ...currentData.aiChallenge, challengesAccepted: true, challenges: [] },
       });
+
       onAddWin(currentDateKey, 'AI Challenges Added to Targets!');
     } catch (err) {
       alert('Failed to generate AI challenges.');
@@ -161,11 +174,21 @@ const DayView: React.FC<DayViewProps> = ({
     updatedGoal: Goal,
     isCompletion: boolean,
   ) => {
-    const goals = (currentData[type] || []) as Goal[];
-    const newGoals = goals.map((g) =>
+    const [currentGoals, setGoals] =
+      type === 'topTargets'
+        ? [localTopTargets, setLocalTopTargets]
+        : [localMassiveGoals, setLocalMassiveGoals];
+
+    const newGoals = currentGoals.map((g) =>
       g.id === updatedGoal.id ? { ...updatedGoal, completed: isCompletion } : g
     );
+
+    // Update local state so the checkmark stays
+    setGoals(newGoals);
+
+    // Persist to parent / storage
     await updateCurrentData({ [type]: newGoals });
+
     if (isCompletion && updatedGoal.text?.trim()) {
       onAddWin(currentDateKey, `Target Completed: ${updatedGoal.text}`);
     }
@@ -261,8 +284,8 @@ const DayView: React.FC<DayViewProps> = ({
               <div className="space-y-3">
                 {appointments.map((event) => {
                   const label = event.client
-                    ? `${event.client} — ${event.title}`
-                    : event.title;
+                    ? `${event.client} — ${event.title || 'Appointment'}`
+                    : event.title || 'Appointment';
 
                   return (
                     <div key={event.id} className="flex items-center space-x-3">
@@ -273,13 +296,11 @@ const DayView: React.FC<DayViewProps> = ({
                         onChange={async (e) => {
                           const newConducted = e.target.checked;
 
-                          // Update local events immediately
                           const updatedEvents = (localEvents || []).map((evt) =>
                             evt.id === event.id ? { ...evt, conducted: newConducted } : evt
                           );
-                          setLocalEvents(updatedEvents);
 
-                          // Persist to parent / storage
+                          setLocalEvents(updatedEvents);
                           await updateCurrentData({ events: updatedEvents });
 
                           if (newConducted) {
@@ -287,7 +308,7 @@ const DayView: React.FC<DayViewProps> = ({
                               currentDateKey,
                               `Appointment Conducted: ${label}`
                             );
-                            // follow-up trigger can hook here if needed
+                            // place follow-up trigger here if you need another call
                           }
                         }}
                       />
@@ -318,14 +339,14 @@ const DayView: React.FC<DayViewProps> = ({
         <div className="space-y-8">
           <GoalsBlock
             title="Today's Top 6 Targets"
-            goals={currentData.topTargets || []}
+            goals={localTopTargets}
             onGoalChange={(goal, isCompletion) =>
               handleGoalChange('topTargets', goal, isCompletion)
             }
           />
           <GoalsBlock
             title="Massive Action Goals"
-            goals={currentData.massiveGoals || []}
+            goals={localMassiveGoals}
             onGoalChange={(goal, isCompletion) =>
               handleGoalChange('massiveGoals', goal, isCompletion)
             }
