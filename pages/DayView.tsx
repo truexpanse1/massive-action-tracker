@@ -35,7 +35,9 @@ interface DayViewProps {
   hotLeads: Contact[];
   transactions: Transaction[];
   users: User[];
-  onNavigateToRevenue: (period: 'today' | 'week' | 'month' | 'ytd' | 'mcv' | 'acv') => void;
+  onNavigateToRevenue: (
+    period: 'today' | 'week' | 'month' | 'ytd' | 'mcv' | 'acv'
+  ) => void;
   user: User;
 }
 
@@ -63,30 +65,44 @@ const DayView: React.FC<DayViewProps> = ({
   const currentDateKey = getDateKey(selectedDate);
   const currentData: DayData = allData[currentDateKey] || getInitialDayData();
 
-  // 🔹 Local state mirrors DayData for the *current date*
-  const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(currentData.events || []);
-  const [localTopTargets, setLocalTopTargets] = useState<Goal[]>(currentData.topTargets || []);
-  const [localMassiveGoals, setLocalMassiveGoals] = useState<Goal[]>(currentData.massiveGoals || []);
+  // 🔹 Local mirrors for the *current day*
+  const [localEvents, setLocalEvents] = useState<CalendarEvent[]>(
+    currentData.events || []
+  );
+  const [localTopTargets, setLocalTopTargets] = useState<Goal[]>(
+    currentData.topTargets || []
+  );
+  const [localMassiveGoals, setLocalMassiveGoals] = useState<Goal[]>(
+    currentData.massiveGoals || []
+  );
 
-  // When the selected day changes, load that day's data into local state
+  // When the selected date changes, re-hydrate local state from allData
   useEffect(() => {
     const newData: DayData = allData[currentDateKey] || getInitialDayData();
     setLocalEvents(newData.events || []);
     setLocalTopTargets(newData.topTargets || []);
     setLocalMassiveGoals(newData.massiveGoals || []);
-    // ✅ we intentionally only depend on currentDateKey so we don't overwrite
-    // local changes during saves for the same day
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDateKey]);
 
+  // 🔥 Central helper: always persist the *full* day snapshot
   const updateCurrentData = async (updates: Partial<DayData>) => {
-    const updatedData: DayData = {
-      ...(allData[currentDateKey] || getInitialDayData()),
+    const base = allData[currentDateKey] || getInitialDayData();
+
+    const merged: DayData = {
+      ...base,
+      // keep latest local versions by default
+      events: localEvents,
+      topTargets: localTopTargets,
+      massiveGoals: localMassiveGoals,
+      // then apply any explicit updates passed in
       ...updates,
     };
-    await onDataChange(currentDateKey, updatedData);
+
+    await onDataChange(currentDateKey, merged);
   };
 
+  // ---------- REVENUE CARD ----------
   const calculatedRevenue = useMemo<RevenueData>(() => {
     const todayKey = getDateKey(selectedDate);
     const startOfWeek = new Date(selectedDate);
@@ -108,7 +124,10 @@ const DayView: React.FC<DayViewProps> = ({
       const transactionDate = new Date(t.date + 'T00:00:00');
       if (t.date === todayKey) today += t.amount;
       if (t.date >= startOfWeekKey && t.date <= endOfWeekKey) week += t.amount;
-      if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
+      if (
+        transactionDate.getMonth() === currentMonth &&
+        transactionDate.getFullYear() === currentYear
+      ) {
         month += t.amount;
         if (t.isRecurring) mcv += t.amount;
       }
@@ -127,28 +146,36 @@ const DayView: React.FC<DayViewProps> = ({
     };
   }, [transactions, selectedDate]);
 
-  // Use localEvents for appointments
+  // ---------- APPOINTMENTS ----------
   const appointments = useMemo(() => {
     return (localEvents || [])
       .filter((e): e is CalendarEvent => e?.type === 'Appointment')
       .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   }, [localEvents]);
 
+  // ---------- LEADS ----------
   const leadsAddedToday = useMemo(
-    () => (hotLeads || []).filter((c) => c.dateAdded?.startsWith(currentDateKey)),
+    () =>
+      (hotLeads || []).filter((c) =>
+        c.dateAdded?.startsWith(currentDateKey)
+      ),
     [hotLeads, currentDateKey]
   );
 
+  // ---------- AI CHALLENGES ----------
   const handleAcceptAIChallenge = async () => {
     setIsAiChallengeLoading(true);
     try {
-      // Fill *local* top targets with AI challenges
       const newChallenges = await getSalesChallenges();
       if (!newChallenges?.length) throw new Error('No challenges');
 
       const currentTopTargets = [...localTopTargets];
       let placed = 0;
-      for (let i = 0; i < currentTopTargets.length && placed < newChallenges.length; i++) {
+      for (
+        let i = 0;
+        i < currentTopTargets.length && placed < newChallenges.length;
+        i++
+      ) {
         const goal = currentTopTargets[i];
         if (!goal.text?.trim()) {
           currentTopTargets[i] = { ...goal, text: newChallenges[placed++] };
@@ -158,7 +185,11 @@ const DayView: React.FC<DayViewProps> = ({
       setLocalTopTargets(currentTopTargets);
       await updateCurrentData({
         topTargets: currentTopTargets,
-        aiChallenge: { ...currentData.aiChallenge, challengesAccepted: true, challenges: [] },
+        aiChallenge: {
+          ...currentData.aiChallenge,
+          challengesAccepted: true,
+          challenges: [],
+        },
       });
 
       onAddWin(currentDateKey, 'AI Challenges Added to Targets!');
@@ -169,10 +200,11 @@ const DayView: React.FC<DayViewProps> = ({
     }
   };
 
+  // ---------- GOALS (Top 6 + Massive) ----------
   const handleGoalChange = async (
     type: 'topTargets' | 'massiveGoals',
     updatedGoal: Goal,
-    isCompletion: boolean,
+    isCompletion: boolean
   ) => {
     const [currentGoals, setGoals] =
       type === 'topTargets'
@@ -180,20 +212,20 @@ const DayView: React.FC<DayViewProps> = ({
         : [localMassiveGoals, setLocalMassiveGoals];
 
     const newGoals = currentGoals.map((g) =>
-      g.id === updatedGoal.id ? { ...updatedGoal, completed: isCompletion } : g
+      g.id === updatedGoal.id
+        ? { ...updatedGoal, completed: isCompletion }
+        : g
     );
 
-    // Update local state so the checkmark stays
-    setGoals(newGoals);
-
-    // Persist to parent / storage
-    await updateCurrentData({ [type]: newGoals });
+    setGoals(newGoals); // local
+    await updateCurrentData({ [type]: newGoals }); // persist
 
     if (isCompletion && updatedGoal.text?.trim()) {
       onAddWin(currentDateKey, `Target Completed: ${updatedGoal.text}`);
     }
   };
 
+  // ---------- EVENTS (Add / Edit / Delete) ----------
   const handleEventSaved = (savedEvent: CalendarEvent) => {
     const existingEvents = localEvents || [];
     const updatedEvents = editingEvent
@@ -212,6 +244,7 @@ const DayView: React.FC<DayViewProps> = ({
     updateCurrentData({ events: updatedEvents });
   };
 
+  // ---------- RENDER ----------
   return (
     <>
       <AddLeadModal
@@ -219,6 +252,7 @@ const DayView: React.FC<DayViewProps> = ({
         onClose={() => setIsLeadModalOpen(false)}
         onSave={() => {}}
       />
+
       <AddEventModal
         isOpen={isEventModalOpen}
         onClose={() => {
@@ -230,6 +264,7 @@ const DayView: React.FC<DayViewProps> = ({
         date={selectedDate}
         eventToEdit={editingEvent}
       />
+
       <ViewLeadsModal
         isOpen={isViewLeadsModalOpen}
         onClose={() => setIsViewLeadsModalOpen(false)}
@@ -242,14 +277,21 @@ const DayView: React.FC<DayViewProps> = ({
           {selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}
         </h2>
         <p className="text-brand-light-gray dark:text-gray-400 text-sm font-medium">
-          {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+          {selectedDate.toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+          })}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:items-start">
+        {/* LEFT COLUMN */}
         <div className="space-y-8">
           <Calendar selectedDate={selectedDate} onDateChange={onDateChange} />
-          <RevenueCard data={calculatedRevenue} onNavigate={onNavigateToRevenue} />
+          <RevenueCard
+            data={calculatedRevenue}
+            onNavigate={onNavigateToRevenue}
+          />
           <AIChallengeCard
             data={currentData.aiChallenge}
             isLoading={isAiChallengeLoading}
@@ -257,6 +299,7 @@ const DayView: React.FC<DayViewProps> = ({
           />
         </div>
 
+        {/* MIDDLE COLUMN */}
         <div className="space-y-8">
           <ProspectingKPIs
             contacts={currentData.prospectingContacts || []}
@@ -266,7 +309,9 @@ const DayView: React.FC<DayViewProps> = ({
           {/* TODAY'S APPOINTMENTS */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-red-600">TODAY'S APPOINTMENTS</h3>
+              <h3 className="text-xl font-bold text-red-600">
+                TODAY&apos;S APPOINTMENTS
+              </h3>
               <button
                 onClick={() => {
                   setEditingEvent(null);
@@ -287,17 +332,22 @@ const DayView: React.FC<DayViewProps> = ({
                     ? `${event.client} — ${event.title || 'Appointment'}`
                     : event.title || 'Appointment';
 
+                  const conducted = !!event.conducted;
+
                   return (
                     <div key={event.id} className="flex items-center space-x-3">
                       <input
                         type="checkbox"
                         className="w-5 h-5 form-checkbox text-green-600 rounded focus:ring-green-500"
-                        checked={!!event.conducted}
+                        checked={conducted}
                         onChange={async (e) => {
                           const newConducted = e.target.checked;
 
-                          const updatedEvents = (localEvents || []).map((evt) =>
-                            evt.id === event.id ? { ...evt, conducted: newConducted } : evt
+                          const updatedEvents = (localEvents || []).map(
+                            (evt) =>
+                              evt.id === event.id
+                                ? { ...evt, conducted: newConducted }
+                                : evt
                           );
 
                           setLocalEvents(updatedEvents);
@@ -308,11 +358,15 @@ const DayView: React.FC<DayViewProps> = ({
                               currentDateKey,
                               `Appointment Conducted: ${label}`
                             );
-                            // place follow-up trigger here if you need another call
+                            // follow-up campaign trigger can go here
                           }
                         }}
                       />
-                      <div className={event.conducted ? 'line-through text-gray-500' : ''}>
+                      <div
+                        className={
+                          conducted ? 'line-through text-gray-500' : ''
+                        }
+                      >
                         <p className="font-medium">{label}</p>
                         {event.time && (
                           <p className="text-sm text-gray-600">
@@ -333,9 +387,11 @@ const DayView: React.FC<DayViewProps> = ({
             selectedDate={selectedDate}
             onWin={(msg) => onAddWin(currentDateKey, msg)}
           />
+
           <WinsTodayCard wins={currentData.winsToday || []} />
         </div>
 
+        {/* RIGHT COLUMN */}
         <div className="space-y-8">
           <GoalsBlock
             title="Today's Top 6 Targets"
