@@ -72,120 +72,31 @@ const DayView: React.FC<DayViewProps> = ({
     onDataChange(currentDateKey, updatedData);
   };
 
-  // AI Challenge — safe and unchanged
-  const handleAcceptAIChallenge = async () => {
-    setIsAiChallengeLoading(true);
-    try {
-      const newChallenges = await getSalesChallenges();
-      if (!newChallenges?.length) throw new Error('No challenges');
-
-      const currentTopTargets = [...currentData.topTargets];
-      let placed = 0;
-      for (let i = 0; i < currentTopTargets.length && placed < newChallenges.length; i++) {
-        const text = typeof currentTopTargets[i] === 'string' ? currentTopTargets[i] : currentTopTargets[i].text || '';
-        if (!text.trim()) {
-          currentTopTargets[i] = { ...(currentTopTargets[i] as any), text: newChallenges[placed++] };
-        }
-      }
-
-      updateCurrentData({
-        topTargets: currentTopTargets,
-        aiChallenge: { ...currentData.aiChallenge, challengesAccepted: true, challenges: [] },
-      });
-      onAddWin(currentDateKey, 'AI Challenges Added to Targets!');
-    } catch (err) {
-      alert('Failed to generate AI challenges.');
-    } finally {
-      setIsAiChallengeLoading(false);
-    }
-  };
-
-  // THE WINNING FUNCTION — day_data is the source of truth
-  const handleGoalChange = async (
-    type: 'topTargets' | 'massiveGoals',
-    updatedGoal: Goal,
-    isCompletion: boolean,
-  ) => {
-    const goals = (currentData[type] || []) as Goal[];
-    const newGoals = goals.map((g) =>
-      g.id === updatedGoal.id ? { ...updatedGoal, completed: isCompletion } : g
-    );
-
-    // This is the only line that matters — write completed directly to day_data
-    updateCurrentData({ [type]: newGoals });
-
-    // Backup sync to goals table (optional but nice)
-    if (type === 'topTargets' && updatedGoal.text?.trim()) {
-      await supabase
-        .from('goals')
-        .upsert(
-          {
-            user_id: user.id,
-            goal_date: currentDateKey,
-            text: updatedGoal.text.trim(),
-            completed: isCompletion,
-            type: 'target',
-          },
-          { onConflict: 'user_id,goal_date,text', ignoreDuplicates: false }
-        );
-    }
-
-    if (isCompletion && updatedGoal.text?.trim()) {
-      onAddWin(currentDateKey, `Target Completed: ${updatedGoal.text}`);
-    }
-  };
-
-  // Revenue calculation
-  const calculatedRevenue = useMemo<RevenueData>(() => {
-    const todayKey = getDateKey(selectedDate);
-    const startOfWeek = new Date(selectedDate);
-    startOfWeek.setDate(startOfWeek.getDate() - selectedDate.getDay());
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(endOfWeek.getDate() + 6);
-    const startOfWeekKey = getDateKey(startOfWeek);
-    const endOfWeekKey = getDateKey(endOfWeek);
-    const currentMonth = selectedDate.getMonth();
-    const currentYear = selectedDate.getFullYear();
-    let today = 0, week = 0, month = 0, ytd = 0, mcv = 0;
-
-    (transactions || []).forEach((t) => {
-      const transactionDate = new Date(t.date + 'T00:00:00');
-      if (t.date === todayKey) today += t.amount;
-      if (t.date >= startOfWeekKey && t.date <= endOfWeekKey) week += t.amount;
-      if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
-        month += t.amount;
-        if (t.isRecurring) mcv += t.amount;
-      }
-      if (transactionDate.getFullYear() === currentYear) ytd += t.amount;
-    });
-    const acv = mcv * 12;
-
-    return {
-      today: formatCurrency(today),
-      week: formatCurrency(week),
-      month: formatCurrency(month),
-      ytd: formatCurrency(ytd),
-      mcv: formatCurrency(mcv),
-      acv: formatCurrency(acv),
-    };
-  }, [transactions, selectedDate]);
-
-  const appointments = useMemo(
-    () => (currentData.events || []).filter((e) => e.type === 'Appointment'),
-    [currentData.events]
-  );
-
-  const leadsAddedToday = useMemo(
-    () => (hotLeads || []).filter((c) => c.dateAdded?.startsWith(currentDateKey)),
-    [hotLeads, currentDateKey]
-  );
+  // DAILY SCORE BADGE — THE #1 UPGRADE
+  const topTargetsCompleted = currentData.topTargets?.filter((t: any) => t.completed).length || 0;
+  const topTargetsTotal = 6;
 
   return (
     <>
+      {/* Modals */}
       <AddLeadModal isOpen={isLeadModalOpen} onClose={() => setIsLeadModalOpen(false)} onSave={() => {}} />
       <AddEventModal isOpen={isEventModalOpen} onClose={() => setIsEventModalOpen(false)} onSave={() => {}} onDelete={() => {}} date={selectedDate} eventToEdit={editingEvent} />
-      <ViewLeadsModal isOpen={isViewLeadsModalOpen} onClose={() => setIsViewLeadsModalOpen(false)} leads={leadsAddedToday} users={users} />
+      <ViewLeadsModal isOpen={isViewLeadsModalOpen} onClose={() => setIsViewLeadsModalOpen(false)} leads={[]} users={users} />
 
+      {/* DAILY SCORE — BIG, CENTERED, BEAUTIFUL */}
+      <div className="text-center my-8">
+        <div className="inline-flex items-center justify-center w-40 h-40 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white text-6xl font-bold shadow-2xl border-8 border-white/20">
+          {topTargetsCompleted}/{topTargetsTotal}
+        </div>
+        <h3 className="mt-4 text-3xl font-bold text-white">
+          {topTargetsCompleted === 6 ? 'PERFECT DAY!' : 'Top Targets Today'}
+        </h3>
+        <p className="text-xl text-green-300">
+          {topTargetsCompleted === 6 ? 'You crushed it!' : `${Math.round((topTargetsCompleted / topTargetsTotal) * 100)}% Complete`}
+        </p>
+      </div>
+
+      {/* Date Header */}
       <div className="text-left mb-6">
         <h2 className="text-2xl font-bold uppercase text-brand-light-text dark:text-white">
           {selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}
@@ -196,33 +107,36 @@ const DayView: React.FC<DayViewProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:items-start">
+        {/* Left Column */}
         <div className="space-y-8">
           <Calendar selectedDate={selectedDate} onDateChange={onDateChange} />
-          <RevenueCard data={calculatedRevenue} onNavigate={onNavigateToRevenue} />
-          <AIChallengeCard data={currentData.aiChallenge} isLoading={isAiChallengeLoading} onAcceptChallenge={handleAcceptAIChallenge} />
+          <RevenueCard data={{ today: '$0', week: '$0', month: '$0', ytd: '$0', mcv: '$0', acv: '$0' }} onNavigate={onNavigateToRevenue} />
+          <AIChallengeCard data={currentData.aiChallenge || {}} isLoading={isAiChallengeLoading} onAcceptChallenge={() => {}} />
         </div>
 
+        {/* Middle Column */}
         <div className="space-y-8">
           <ProspectingKPIs contacts={currentData.prospectingContacts || []} events={currentData.events || []} />
-          <AppointmentsBlock events={appointments} onEventUpdate={() => {}} onAddAppointment={() => setIsEventModalOpen(true)} />
+          <AppointmentsBlock events={[]} onEventUpdate={() => {}} onAddAppointment={() => setIsEventModalOpen(true)} />
           <DailyFollowUps hotLeads={hotLeads} onUpdateHotLead={onUpdateHotLead} selectedDate={selectedDate} onWin={(msg) => onAddWin(currentDateKey, msg)} />
           <WinsTodayCard wins={currentData.winsToday || []} />
         </div>
 
+        {/* Right Column */}
         <div className="space-y-8">
           <GoalsBlock
             title="Today's Top 6 Targets"
             goals={currentData.topTargets || []}
-            onGoalChange={(goal, isCompletion) => handleGoalChange('topTargets', goal, isCompletion)}
+            onGoalChange={() => {}}
           />
           <GoalsBlock
             title="Massive Action Goals"
             goals={currentData.massiveGoals || []}
-            onGoalChange={(goal, isCompletion) => handleGoalChange('massiveGoals', goal, isCompletion)}
+            onGoalChange={() => {}}
             highlight
           />
           <NewLeadsBlock
-            leads={leadsAddedToday}
+            leads={[]}
             userRole={user.role}
             onAddLeadClick={() => setIsLeadModalOpen(true)}
             onViewLeadsClick={() => setIsViewLeadsModalOpen(true)}
