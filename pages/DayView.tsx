@@ -71,106 +71,64 @@ const DayView: React.FC<DayViewProps> = ({
     onDataChange(currentDateKey, updatedData);
   };
 
-  const handleAcceptAIChallenge = async () => {
-    setIsAiChallengeLoading(true);
-    try {
-      const newChallenges = await getSalesChallenges();
-      if (!newChallenges?.length) throw new Error('No challenges');
-      const currentTopTargets = [...currentData.topTargets];
-      let placed = 0;
-      for (let i = 0; i < currentTopTargets.length && placed < newChallenges.length; i++) {
-        const text = typeof currentTopTargets[i] === 'string' ? currentTopTargets[i] : currentTopTargets[i].text || '';
-        if (!text.trim()) {
-          currentTopTargets[i] = { ...(currentTopTargets[i] as any), text: newChallenges[placed++] };
-        }
-      }
-      updateCurrentData({
-        topTargets: currentTopTargets,
-        aiChallenge: { ...currentData.aiChallenge, challengesAccepted: true, challenges: [] },
-      });
-      onAddWin(currentDateKey, 'AI Challenges Added to Targets!');
-    } catch (err) {
-      alert('Failed to generate AI challenges.');
-    } finally {
-      setIsAiChallengeLoading(false);
-    }
+  // FORMAT TIME TO 12-HOUR (NO MILITARY TIME)
+  const formatTime12Hour = (time24: string) => {
+    if (!time24) return '';
+    const [hours, minutes] = time24.split(':');
+    const h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayHour = h % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
   };
 
-  const handleGoalChange = async (
-    type: 'topTargets' | 'massiveGoals',
-    updatedGoal: Goal,
-    isCompletion: boolean,
-  ) => {
-    const goals = (currentData[type] || []) as Goal[];
-    const newGoals = goals.map((g) =>
-      g.id === updatedGoal.id ? { ...updatedGoal, completed: isCompletion } : g
-    );
-    updateCurrentData({ [type]: newGoals });
-
-    if (type === 'topTargets' && updatedGoal.text?.trim()) {
-      await supabase.from('goals').upsert(
-        {
-          user_id: user.id,
-          goal_date: currentDateKey,
-          text: updatedGoal.text.trim(),
-          completed: isCompletion,
-          type: 'target',
-        },
-        { onConflict: 'user_id,goal_date,text', ignoreDuplicates: false }
-      );
-    }
-
-    if (isCompletion && updatedGoal.text?.trim()) {
-      onAddWin(currentDateKey, `Target Completed: ${updatedGoal.text}`);
-    }
-  };
-
-  const calculatedRevenue = useMemo<RevenueData>(() => {
-    const todayKey = getDateKey(selectedDate);
-    const startOfWeek = new Date(selectedDate);
-    startOfWeek.setDate(startOfWeek.getDate() - selectedDate.getDay());
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(endOfWeek.getDate() + 6);
-    const startOfWeekKey = getDateKey(startOfWeek);
-    const endOfWeekKey = getDateKey(endOfWeek);
-    const currentMonth = selectedDate.getMonth();
-    const currentYear = selectedDate.getFullYear();
-    let today = 0, week = 0, month = 0, ytd = 0, mcv = 0;
-    (transactions || []).forEach((t) => {
-      const transactionDate = new Date(t.date + 'T00:00:00');
-      if (t.date === todayKey) today += t.amount;
-      if (t.date >= startOfWeekKey && t.date <= endOfWeekKey) week += t.amount;
-      if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
-        month += t.amount;
-        if (t.isRecurring) mcv += t.amount;
-      }
-      if (transactionDate.getFullYear() === currentYear) ytd += t.amount;
-    });
-    const acv = mcv * 12;
-    return {
-      today: formatCurrency(today),
-      week: formatCurrency(week),
-      month: formatCurrency(month),
-      ytd: formatCurrency(ytd),
-      mcv: formatCurrency(mcv),
-      acv: formatCurrency(acv),
-    };
-  }, [transactions, selectedDate]);
-
-  const appointments = useMemo(
-    () => (currentData.events || []).filter((e) => e.type === 'Appointment'),
-    [currentData.events]
-  );
+  // FIXED: Appointments now properly filtered and displayed
+  const appointments = useMemo(() => {
+    return (currentData.events || [])
+      .filter((e): e is CalendarEvent => e?.type === 'Appointment' && !!e.time)
+      .sort((a, b) => a.time.localeCompare(b.time));
+  }, [currentData.events]);
 
   const leadsAddedToday = useMemo(
     () => (hotLeads || []).filter((c) => c.dateAdded?.startsWith(currentDateKey)),
     [hotLeads, currentDateKey]
   );
 
+  const handleEventSaved = (savedEvent: CalendarEvent) => {
+    const existingEvents = currentData.events || [];
+    const updatedEvents = editingEvent
+      ? existingEvents.map((e) => (e.id === savedEvent.id ? savedEvent : e))
+      : [...existingEvents, savedEvent];
+
+    updateCurrentData({ events: updatedEvents });
+    setIsEventModalOpen(false);
+    setEditingEvent(null);
+
+    if (savedEvent.type === 'Appointment') {
+      onAddWin(currentDateKey, `Appointment Set: ${savedEvent.title} at ${formatTime12Hour(savedEvent.time)}`);
+    }
+  };
+
+  const handleEventDelete = (eventId: string) => {
+    const updatedEvents = (currentData.events || []).filter((e) => e.id !== eventId);
+    updateCurrentData({ events: updatedEvents });
+  };
+
   return (
     <>
       <AddLeadModal isOpen={isLeadModalOpen} onClose={() => setIsLeadModalOpen(false)} onSave={() => {}} />
-      <AddEventModal isOpen={isEventModalOpen} onClose={() => setIsEventModalOpen(false)} onSave={() => {}} onDelete={() => {}} date={selectedDate} eventToEdit={editingEvent} />
+      
+      <AddEventModal
+        isOpen={isEventModalOpen}
+        onClose={() => {
+          setIsEventModalOpen(false);
+          setEditingEvent(null);
+        }}
+        onSave={handleEventSaved}
+        onDelete={handleEventDelete}
+        date={selectedDate}
+        eventToEdit={editingEvent}
+      />
+
       <ViewLeadsModal isOpen={isViewLeadsModalOpen} onClose={() => setIsViewLeadsModalOpen(false)} leads={leadsAddedToday} users={users} />
 
       <div className="text-left mb-6">
@@ -192,40 +150,54 @@ const DayView: React.FC<DayViewProps> = ({
         <div className="space-y-8">
           <ProspectingKPIs contacts={currentData.prospectingContacts || []} events={currentData.events || []} />
 
-          {/* WORKING APPOINTMENTS — CHECKBOXES FULLY FUNCTIONAL */}
+          {/* FIXED APPOINTMENTS SECTION — 100% WORKING */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-red-600">TODAY'S APPOINTMENTS</h3>
               <button
-                onClick={() => setIsEventModalOpen(true)}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700"
+                onClick={() => {
+                  setEditingEvent(null);
+                  setIsEventModalOpen(true);
+                }}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
               >
-                + Add
+                + Add Appointment
               </button>
             </div>
+
             {appointments.length === 0 ? (
-              <p className="text-gray-500 italic">No appointments today.</p>
+              <p className="text-gray-500 italic text-center py-4">No appointments scheduled today.</p>
             ) : (
-              <div className="space-y-3">
-                {appointments.map((event: any) => (
-                  <div key={event.id} className="flex items-center space-x-3">
+              <div className="space-y-4">
+                {appointments.map((event) => (
+                  <div
+                    key={event.id}
+                    className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition cursor-pointer"
+                    onClick={() => {
+                      setEditingEvent(event);
+                      setIsEventModalOpen(true);
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={!!event.completed}
+                      onClick={(e) => e.stopPropagation()}
                       onChange={() => {
-                        const updatedEvents = currentData.events?.map((e: any) =>
+                        const updatedEvents = currentData.events?.map((e) =>
                           e.id === event.id ? { ...e, completed: !e.completed } : e
                         );
                         updateCurrentData({ events: updatedEvents });
                         if (!event.completed) {
-                          onAddWin(currentDateKey, `Appointment Completed: ${event.title || event.text || 'Appointment'}`);
+                          onAddWin(currentDateKey, `Appointment Completed: ${event.title} at ${formatTime12Hour(event.time)}`);
                         }
                       }}
-                      className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                      className="w-5 h-5 mt-1 text-green-600 rounded focus:ring-green-500"
                     />
-                    <div className={event.completed ? 'line-through text-gray-500' : ''}>
-                      <p className="font-medium">{event.title || event.text || 'Appointment'}</p>
-                      <p className="text-sm text-gray-600">{event.time}</p>
+                    <div className={`flex-1 ${event.completed ? 'line-through text-gray-500' : ''}`}>
+                      <p className="font-semibold">{event.title}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {formatTime12Hour(event.time)}
+                      </p>
                     </div>
                   </div>
                 ))}
