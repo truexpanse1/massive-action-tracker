@@ -77,7 +77,6 @@ const DayView: React.FC<DayViewProps> = ({
     try {
       const newChallenges = await getSalesChallenges();
       if (!newChallenges?.length) throw new Error('No challenges');
-
       const currentTopTargets = [...currentData.topTargets];
       let placed = 0;
       for (let i = 0; i < currentTopTargets.length && placed < newChallenges.length; i++) {
@@ -86,7 +85,6 @@ const DayView: React.FC<DayViewProps> = ({
           currentTopTargets[i] = { ...(currentTopTargets[i] as any), text: newChallenges[placed++] };
         }
       }
-
       updateCurrentData({
         topTargets: currentTopTargets,
         aiChallenge: { ...currentData.aiChallenge, challengesAccepted: true, challenges: [] },
@@ -108,7 +106,6 @@ const DayView: React.FC<DayViewProps> = ({
     const newGoals = goals.map((g) =>
       g.id === updatedGoal.id ? { ...updatedGoal, completed: isCompletion } : g
     );
-
     updateCurrentData({ [type]: newGoals });
 
     if (type === 'topTargets' && updatedGoal.text?.trim()) {
@@ -142,7 +139,6 @@ const DayView: React.FC<DayViewProps> = ({
     const currentMonth = selectedDate.getMonth();
     const currentYear = selectedDate.getFullYear();
     let today = 0, week = 0, month = 0, ytd = 0, mcv = 0;
-
     (transactions || []).forEach((t) => {
       const transactionDate = new Date(t.date + 'T00:00:00');
       if (t.date === todayKey) today += t.amount;
@@ -154,7 +150,6 @@ const DayView: React.FC<DayViewProps> = ({
       if (transactionDate.getFullYear() === currentYear) ytd += t.amount;
     });
     const acv = mcv * 12;
-
     return {
       today: formatCurrency(today),
       week: formatCurrency(week),
@@ -199,7 +194,15 @@ const DayView: React.FC<DayViewProps> = ({
 
         <div className="space-y-8">
           <ProspectingKPIs contacts={currentData.prospectingContacts || []} events={currentData.events || []} />
-          <AppointmentsBlock events={appointments} onEventUpdate={() => {}} onAddAppointment={() => setIsEventModalOpen(true)} />
+          
+          {/* FIXED: Appointments checkbox works again */}
+          <AppointmentsBlock
+            events={appointments}
+            onEventUpdate={() => {}}
+            onAddAppointment={() => setIsEventModalOpen(true)}
+            onGoalChange={(goal, isCompletion) => handleGoalChange('events', goal, isCompletion)}
+          />
+
           <DailyFollowUps hotLeads={hotLeads} onUpdateHotLead={onUpdateHotLead} selectedDate={selectedDate} onWin={(msg) => onAddWin(currentDateKey, msg)} />
           <WinsTodayCard wins={currentData.winsToday || []} />
         </div>
