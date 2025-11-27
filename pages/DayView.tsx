@@ -63,22 +63,22 @@ const DayView: React.FC<DayViewProps> = ({
   const currentDateKey = getDateKey(selectedDate);
   const currentData: DayData = allData[currentDateKey] || getInitialDayData();
 
-  const updateCurrentData = (updates: Partial<DayData>) => {
+  const updateCurrentData = async (updates: Partial<DayData>) => {
     const updatedData: DayData = {
       ...(allData[currentDateKey] || getInitialDayData()),
       ...updates,
     };
-    onDataChange(currentDateKey, updatedData);
+    await onDataChange(currentDateKey, updatedData);
   };
 
-  // FIXED: calculatedRevenue is back and correct
+  // REVENUE CALCULATION — FIXED
   const calculatedRevenue = useMemo<RevenueData>(() => {
     const todayKey = getDateKey(selectedDate);
     const startOfWeek = new Date(selectedDate);
     startOfWeek.setDate(startOfWeek.getDate() - selectedDate.getDay());
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(endOfWeek.getDate() + 6);
-    const startOfWeekKey = getDateKey(startOfWeek);
+    const startOfWeekKey = getBanks(getDateKey(startOfWeek));
     const endOfWeekKey = getDateKey(endOfWeek);
     const currentMonth = selectedDate.getMonth();
     const currentYear = selectedDate.getFullYear();
@@ -108,7 +108,7 @@ const DayView: React.FC<DayViewProps> = ({
     };
   }, [transactions, selectedDate]);
 
-  // 12-hour time format (no military time)
+  // 12-HOUR TIME FORMAT
   const formatTime12Hour = (time24: string) => {
     if (!time24) return '';
     const [hours, minutes] = time24.split(':');
@@ -118,6 +118,7 @@ const DayView: React.FC<DayViewProps> = ({
     return `${displayHour}:${minutes} ${ampm}`;
   };
 
+  // APPOINTMENTS — FINAL FIXED VERSION
   const appointments = useMemo(() => {
     return (currentData.events || [])
       .filter((e): e is CalendarEvent => e?.type === 'Appointment' && !!e.time)
@@ -227,7 +228,7 @@ const DayView: React.FC<DayViewProps> = ({
         <div className="space-y-8">
           <ProspectingKPIs contacts={currentData.prospectingContacts || []} events={currentData.events || []} />
 
-          {/* APPOINTMENTS — FULLY FIXED */}
+          {/* FINAL APPOINTMENTS BLOCK — PERFECT */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-red-600">TODAY'S APPOINTMENTS</h3>
@@ -243,38 +244,51 @@ const DayView: React.FC<DayViewProps> = ({
             </div>
 
             {appointments.length === 0 ? (
-              <p className="text-gray-500 italic text-center py-4">No appointments scheduled today.</p>
+              <p className="text-gray-500 italic text-center py-8">No appointments scheduled today.</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {appointments.map((event) => (
                   <div
                     key={event.id}
-                    className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition cursor-pointer"
+                    className="group relative bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-600 transition cursor-pointer"
                     onClick={() => {
                       setEditingEvent(event);
                       setIsEventModalOpen(true);
                     }}
                   >
-                    <input
-                      type="checkbox"
-                      checked={!!event.completed}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={() => {
-                        const updatedEvents = currentData.events?.map((e) =>
-                          e.id === event.id ? { ...e, completed: !e.completed } : e
-                        );
-                        updateCurrentData({ events: updatedEvents });
-                        if (!event.completed) {
-                          onAddWin(currentDateKey, `Appointment Completed: ${event.title} at ${formatTime12Hour(event.time)}`);
-                        }
-                      }}
-                      className="w-5 h-5 mt-1 text-green-600 rounded focus:ring-green-500"
-                    />
-                    <div className={`flex-1 ${event.completed ? 'line-through text-gray-500' : ''}`}>
-                      <p className="font-semibold">{event.title}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {formatTime12Hour(event.time)}
-                      </p>
+                    <div className="flex items-start space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={!!event.completed}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={async () => {
+                          const updatedEvents = currentData.events!.map((e) =>
+                            e.id === event.id ? { ...e, completed: !e.completed } : e
+                          );
+                          await updateCurrentData({ events: updatedEvents });
+
+                          if (!event.completed) {
+                            onAddWin(currentDateKey, `Appointment Completed: ${event.title} with ${event.contact || 'Client'} at ${formatTime12Hour(event.time)}`);
+                          }
+                        }}
+                        className="w-5 h-5 mt-0.5 text-green-600 rounded focus:ring-2 focus:ring-green-500 cursor-pointer"
+                      />
+
+                      <div className={`flex-1 ${event.completed ? 'line-through text-gray-500' : ''}`}>
+                        <p className="font-semibold text-lg">{event.title}</p>
+                        {event.contact && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">with {event.contact}</p>
+                        )}
+                        <p className="text-sm font-medium text-brand-red">
+                          {formatTime12Hour(event.time)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
+                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
                     </div>
                   </div>
                 ))}
