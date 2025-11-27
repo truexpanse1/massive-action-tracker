@@ -97,7 +97,6 @@ const DayView: React.FC<DayViewProps> = ({
     }
   };
 
-  // THIS IS THE ONLY FUNCTION THAT MATTERS — HANDLES BOTH TOP 6 AND APPOINTMENTS
   const handleGoalChange = async (
     type: 'topTargets' | 'massiveGoals' | 'events',
     updatedGoal: Goal,
@@ -114,13 +113,11 @@ const DayView: React.FC<DayViewProps> = ({
       }
       return;
     }
-
     const goals = (currentData[type] || []) as Goal[];
     const newGoals = goals.map((g) =>
       g.id === updatedGoal.id ? { ...updatedGoal, completed: isCompletion } : g
     );
     updateCurrentData({ [type]: newGoals });
-
     if (type === 'topTargets' && updatedGoal.text?.trim()) {
       await supabase.from('goals').upsert(
         {
@@ -133,7 +130,6 @@ const DayView: React.FC<DayViewProps> = ({
         { onConflict: 'user_id,goal_date,text', ignoreDuplicates: false }
       );
     }
-
     if (isCompletion && updatedGoal.text?.trim()) {
       onAddWin(currentDateKey, `Target Completed: ${updatedGoal.text}`);
     }
@@ -206,15 +202,16 @@ const DayView: React.FC<DayViewProps> = ({
         <div className="space-y-8">
           <ProspectingKPIs contacts={currentData.prospectingContacts || []} events={currentData.events || []} />
           
-          {/* APPOINTMENTS — CHECKBOX NOW WORKS 100% */}
-         <AppointmentsBlock
-  events={appointments}
-  onEventUpdate={() => {}}
-  onAddAppointment={() => setIsEventModalOpen(true)}
-  onGoalChange={(goal, isCompletion, index) => 
-    handleGoalChange('events', goal, isCompletion, index)
-  }
-/>
+          {/* THIS IS THE ONLY LINE THAT MATTERS — INDEX INCLUDED */}
+          <AppointmentsBlock
+            events={appointments}
+            onEventUpdate={() => {}}
+            onAddAppointment={() => setIsEventModalOpen(true)}
+            onGoalChange={(goal, isCompletion, index) => 
+              handleGoalChange('events', goal, isCompletion, index)
+            }
+          />
+
           <DailyFollowUps hotLeads={hotLeads} onUpdateHotLead={onUpdateHotLead} selectedDate={selectedDate} onWin={(msg) => onAddWin(currentDateKey, msg)} />
           <WinsTodayCard wins={currentData.winsToday || []} />
         </div>
