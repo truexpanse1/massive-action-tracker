@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { startStripeCheckout } from '../services/billingService';
+
+// TODO: replace the first two with your real Stripe price IDs from the Dashboard
+const SOLO_PRICE_ID = 'REPLACE_WITH_SOLO_PRICE_ID';   // $39 Solo Closer
+const TEAM_PRICE_ID = 'REPLACE_WITH_TEAM_PRICE_ID';   // $149 Team Engine
+const ELITE_PRICE_ID = 'price_1SVIo3AF9E77pmGUVxM0u4z1'; // $399 Elite / Company plan
 
 const LandingPage: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
@@ -7,6 +13,7 @@ const LandingPage: React.FC = () => {
   const [loginPassword, setLoginPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isStartingCheckout, setIsStartingCheckout] = useState(false);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +43,33 @@ const LandingPage: React.FC = () => {
   const openLogin = () => {
     setShowLogin(true);
     setLoginError(null);
+  };
+
+  // 🔹 Shared helper to start Stripe checkout for a given plan
+  const handleStartPlanCheckout = async (priceId: string) => {
+    try {
+      setIsStartingCheckout(true);
+
+      // Use the login email if already typed, otherwise prompt for one
+      let email = loginEmail.trim();
+      if (!email) {
+        const entered = window
+          .prompt('Enter the email you want to use for your MAT account:')
+          ?.trim();
+        if (!entered) {
+          setIsStartingCheckout(false);
+          return;
+        }
+        email = entered;
+      }
+
+      await startStripeCheckout(priceId, email);
+      // startStripeCheckout will redirect on success
+    } catch (err) {
+      console.error('Error starting checkout:', err);
+      alert('There was a problem starting your checkout. Please try again.');
+      setIsStartingCheckout(false);
+    }
   };
 
   return (
@@ -77,12 +111,14 @@ const LandingPage: React.FC = () => {
             >
               Login
             </button>
-            <a
-              href="#pricing"
-              className="px-4 sm:px-6 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-fuchsia-500 to-indigo-500 shadow-lg shadow-fuchsia-500/40 hover:shadow-fuchsia-500/70 transition"
+            <button
+              type="button"
+              onClick={() => handleStartPlanCheckout(TEAM_PRICE_ID)}
+              disabled={isStartingCheckout}
+              className="px-4 sm:px-6 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-fuchsia-500 to-indigo-500 shadow-lg shadow-fuchsia-500/40 hover:shadow-fuchsia-500/70 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Start 7-Day Free Trial
-            </a>
+              {isStartingCheckout ? 'Starting Trial…' : 'Start 7-Day Free Trial'}
+            </button>
           </div>
         </div>
       </header>
@@ -111,12 +147,14 @@ const LandingPage: React.FC = () => {
           </p>
 
           <div className="flex flex-wrap items-center gap-4 mb-6">
-            <a
-              href="#pricing"
-              className="px-6 py-3 rounded-full font-semibold bg-gradient-to-r from-fuchsia-500 to-indigo-500 shadow-lg shadow-fuchsia-500/40 hover:shadow-fuchsia-500/70 transition"
+            <button
+              type="button"
+              onClick={() => handleStartPlanCheckout(TEAM_PRICE_ID)}
+              disabled={isStartingCheckout}
+              className="px-6 py-3 rounded-full font-semibold bg-gradient-to-r from-fuchsia-500 to-indigo-500 shadow-lg shadow-fuchsia-500/40 hover:shadow-fuchsia-500/70 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Start Free • 7-Day Trial
-            </a>
+              {isStartingCheckout ? 'Starting Trial…' : 'Start Free • 7-Day Trial'}
+            </button>
             <button
               type="button"
               onClick={openLogin}
@@ -133,6 +171,8 @@ const LandingPage: React.FC = () => {
 
         {/* TOOL / BENEFITS */}
         <section id="tools" className="py-16 border-t border-white/5">
+          {/* ... unchanged content ... */}
+          {/* Keeping everything below exactly as you had it, only pricing buttons are modified later */}
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div>
               <h2 className="text-3xl font-bold mb-4">
@@ -234,6 +274,7 @@ const LandingPage: React.FC = () => {
 
         {/* SOCIAL PROOF / BEFORE & AFTER STYLE */}
         <section id="proof" className="py-16 border-t border-white/5">
+          {/* ... unchanged ... */}
           <h2 className="text-3xl font-bold mb-2">
             Before MAT vs after MAT inside your team.
           </h2>
@@ -308,12 +349,14 @@ const LandingPage: React.FC = () => {
                 <li>• AI content & follow-up tools</li>
                 <li>• Basic revenue + KPI reports</li>
               </ul>
-              <a
-                href="#"
-                className="inline-flex justify-center items-center px-4 py-3 rounded-xl bg-gradient-to-r from-fuchsia-500 to-indigo-500 text-sm font-semibold shadow-lg shadow-fuchsia-500/40 hover:shadow-fuchsia-500/70 transition"
+              <button
+                type="button"
+                onClick={() => handleStartPlanCheckout(SOLO_PRICE_ID)}
+                disabled={isStartingCheckout}
+                className="inline-flex justify-center items-center px-4 py-3 rounded-xl bg-gradient-to-r from-fuchsia-500 to-indigo-500 text-sm font-semibold shadow-lg shadow-fuchsia-500/40 hover:shadow-fuchsia-500/70 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Start Solo Plan
-              </a>
+                {isStartingCheckout ? 'Starting…' : 'Start Solo Plan'}
+              </button>
             </div>
 
             {/* Team (most popular) */}
@@ -336,12 +379,14 @@ const LandingPage: React.FC = () => {
                 <li>• AI content studio for the entire team</li>
                 <li>• Priority support</li>
               </ul>
-              <a
-                href="#"
-                className="inline-flex justify-center items-center px-4 py-3 rounded-xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-sm font-semibold shadow-lg shadow-fuchsia-500/40 hover:shadow-fuchsia-500/70 transition"
+              <button
+                type="button"
+                onClick={() => handleStartPlanCheckout(TEAM_PRICE_ID)}
+                disabled={isStartingCheckout}
+                className="inline-flex justify-center items-center px-4 py-3 rounded-xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-sm font-semibold shadow-lg shadow-fuchsia-500/40 hover:shadow-fuchsia-500/70 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Start Team Engine
-              </a>
+                {isStartingCheckout ? 'Starting…' : 'Start Team Engine'}
+              </button>
             </div>
 
             {/* Elite + Coaching */}
@@ -361,12 +406,14 @@ const LandingPage: React.FC = () => {
                 <li>• Deep KPI review & game-plan</li>
                 <li>• Designed for teams serious about 7-figure growth</li>
               </ul>
-              <a
-                href="#"
-                className="inline-flex justify-center items-center px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-400 text-sm font-semibold shadow-lg shadow-emerald-500/40 hover:shadow-emerald-500/70 transition"
+              <button
+                type="button"
+                onClick={() => handleStartPlanCheckout(ELITE_PRICE_ID)}
+                disabled={isStartingCheckout}
+                className="inline-flex justify-center items-center px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-400 text-sm font-semibold shadow-lg shadow-emerald-500/40 hover:shadow-emerald-500/70 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Apply for Elite
-              </a>
+                {isStartingCheckout ? 'Starting…' : 'Apply for Elite'}
+              </button>
             </div>
           </div>
 
