@@ -4,23 +4,36 @@ import Stripe from 'stripe';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
-if (!stripeSecretKey) {
-  throw new Error('STRIPE_SECRET_KEY is not set in Vercel environment variables.');
+// ⚠️ Do NOT throw at the top level – just lazily create the client
+let stripe: Stripe | null = null;
+if (stripeSecretKey) {
+  stripe = new Stripe(stripeSecretKey, {
+    apiVersion: '2024-06-20',
+  });
 }
 
-const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: '2024-06-20',
-});
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Allow only POST
+  // Only allow POST
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  // Safety: make sure Stripe is configured
+  if (!stripe) {
+    console.error('STRIPE_SECRET_KEY is not set or Stripe failed to initialize.');
+    return res.status(500).json({
+      error: 'Server configuration error',
+      details: 'Stripe is not configured on the server.',
+    });
+  }
+
   try {
-    const { priceId, email } = req.body as { priceId?: string; email?: string };
+    // Vercel will give us req.body if the client sends JSON
+    const { priceId, email } = (req.body ?? {}) as {
+      priceId?: string;
+      email?: string;
+    };
 
     if (!priceId || !email) {
       return res.status(400).json({ error: 'Missing priceId or email' });
@@ -37,14 +50,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }));
 
     // Build success/cancel URLs using the current origin
-    const origin = req.headers.origin || process.env.APP_BASE_URL || 'https://www.apptruexpanse.com';
+    const origin =
+      req.headers.origin ||
+      process.env.APP_BASE_URL ||
+      'https://www.apptruexpanse.com';
 
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      // Optional: 14-day trial logic can be added here if you want
       success_url: `${origin}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/billing/cancelled`,
     });
