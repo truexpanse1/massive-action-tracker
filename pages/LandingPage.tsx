@@ -483,10 +483,10 @@ const LandingPage: React.FC = () => {
             />
             <div>
               <h3 className="text-3xl md:text-4xl font-black mb-4 text-gray-900">
-                End Your Day Strong
+                Your Daily Win Report
               </h3>
               <p className="text-lg md:text-xl text-gray-600">
-                One simple report shows everything you did today — calls, texts, wins, revenue.
+                See everything you did today in one simple report. It tracks every call, text, and win. You will know exactly what works to make you win more. You can even look back at any day you want!
               </p>
             </div>
           </div>
@@ -495,10 +495,10 @@ const LandingPage: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
             <div>
               <h3 className="text-3xl md:text-4xl font-black mb-4 text-gray-900">
-                Watch Your Money Grow
+                Know Your Money Flow
               </h3>
               <p className="text-lg md:text-xl text-gray-600">
-                Real-time revenue tracking with average deal size and trends.
+                See your money grow in real-time! Find out which products sell the best and when. You can change the dates to see trends and know what to sell next. This helps you sell smarter, not just harder.
               </p>
             </div>
             <img
@@ -517,10 +517,10 @@ const LandingPage: React.FC = () => {
             />
             <div>
               <h3 className="text-3xl md:text-4xl font-black mb-4 text-gray-900">
-                Celebrate Every Win
+                Meet Your New Clients Page
               </h3>
               <p className="text-lg md:text-xl text-gray-600">
-                See new clients appear the moment they close.
+                See all your new clients on one simple page. This is a list of every client your team has closed. You can see the exact day they became a paying client. It’s the perfect way to celebrate and keep track of your wins!
               </p>
             </div>
           </div>
@@ -529,10 +529,10 @@ const LandingPage: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
             <div>
               <h3 className="text-3xl md:text-4xl font-black mb-4 text-gray-900">
-                Never Miss a Follow-Up
+                The Power Dashboard
               </h3>
               <p className="text-lg md:text-xl text-gray-600">
-                Your daily call list with one-tap tracking.
+                This special chart helps managers see how their team is doing. Pick any five numbers, like "money made" and "meetings set," to see how they work together. This shows you the clear path to making more money.
               </p>
             </div>
             <img
@@ -551,10 +551,10 @@ const LandingPage: React.FC = () => {
             />
             <div>
               <h3 className="text-3xl md:text-4xl font-black mb-4 text-gray-900">
-                Lead Your Team to Victory
+                Build Your Money Pipeline
               </h3>
               <p className="text-lg md:text-xl text-gray-600">
-                Full visibility. Leaderboards. EOD reports.
+                This is where you build your future money. Every time you click a button here, it saves the data forever. This helps you build a strong list of future customers that will bring in steady money. It's simple: track your work, and the money will follow.
               </p>
             </div>
           </div>
@@ -566,7 +566,7 @@ const LandingPage: React.FC = () => {
                 Create Like a Pro — Instantly
               </h3>
               <p className="text-lg md:text-xl text-gray-600">
-                Generate perfect social posts, emails, and images in seconds.
+                Quickly make great images for social media, emails, and flyers. This tool is in the Marketing section. It helps you make eye-catching posts fast, so you can spend more time selling and less time designing.
               </p>
             </div>
             <img
