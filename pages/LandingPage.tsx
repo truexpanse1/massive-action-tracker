@@ -154,7 +154,11 @@ const LandingPage: React.FC = () => {
         }
       }
 
-      // Step 2: Redirect to Stripe checkout
+      // Step 2: Ensure user is logged out before redirecting to Stripe
+      // This prevents the app from routing to the main view and blocking the Stripe redirect
+      await supabase.auth.signOut();
+
+      // Step 3: Redirect to Stripe checkout
       await startStripeCheckout(selectedPlan.priceId, purchaseForm.email);
       // Note: startStripeCheckout redirects the page, so code after this won't execute
     } catch (err: any) {
