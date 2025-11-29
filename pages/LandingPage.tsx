@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, FormEvent, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { startStripeCheckout } from '../services/billingService';
 
@@ -8,395 +8,178 @@ const TEAM_PRICE_ID = 'price_1SVIo3AF9E77pmGUWmOiZw0';   // $149 Team Engine
 const ELITE_PRICE_ID = 'price_1SVIo3AF9E77pmGUVxM0u4z1'; // $399 Elite / Company plan
 
 interface PlanInfo {
-  id: 'solo' | 'team' | 'elite';
   name: string;
   price: number;
   priceId: string;
   description: string;
   features: string[];
-  buttonColor: string;
-  buttonHoverColor: string;
 }
 
 const PLANS: Record<string, PlanInfo> = {
   solo: {
-    id: 'solo',
     name: 'Solo Closer',
     price: 39,
     priceId: SOLO_PRICE_ID,
-    description: 'For the person ready to win every day',
-    features: [
-      'Daily dashboard with smart reminders',
-      'Full pipeline tracking',
-      'AI content & image studio',
-      'Revenue & win tracking',
-      'Private community access',
-    ],
-    buttonColor: 'bg-blue-600',
-    buttonHoverColor: 'hover:bg-blue-700',
+    description: 'Perfect for the individual who wants to track their own massive action.',
+    features: ['1 User Account', 'All Core Tracking Features', 'EOD Report', 'Pipeline Builder'],
   },
   team: {
-    id: 'team',
     name: 'Team Engine',
     price: 149,
     priceId: TEAM_PRICE_ID,
-    description: 'For teams who grow together',
-    features: [
-      'Everything in Solo',
-      'Manager EOD reports',
-      'Team leaderboards',
-      'Pipeline heatmaps',
-      'Priority support',
-    ],
-    buttonColor: 'bg-blue-600',
-    buttonHoverColor: 'hover:bg-blue-700',
+    description: 'For small teams ready to scale their results and track team performance.',
+    features: ['Up to 5 User Accounts', 'Team Leaderboards', 'Manager Dashboard', 'All Solo Features'],
   },
   elite: {
-    id: 'elite',
-    name: 'Elite + Coaching',
+    name: 'Elite / Company',
     price: 399,
     priceId: ELITE_PRICE_ID,
-    description: 'For teams who want expert help',
-    features: [
-      'Everything in Team',
-      'Monthly live coaching from a 10X business coach',
-      'Custom team strategy',
-      'Quarterly calls',
-      'Early access to new AI tools',
-    ],
-    buttonColor: 'bg-green-600',
-    buttonHoverColor: 'hover:bg-green-700',
+    description: 'The ultimate solution for large organizations needing full visibility and control.',
+    features: ['Up to 10 User Accounts', 'Custom Reporting', 'Dedicated Support', 'All Team Features'],
   },
 };
 
-const LandingPage: React.FC = () => {
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<PlanInfo | null>(null);
-  const [showLoginModal, setShowLoginModal] = useState(false);
+interface PurchaseFormData {
+  email: string;
+  fullName: string;
+  company: string;
+  phone: string;
+}
 
-  // Purchase form state
-  const [purchaseForm, setPurchaseForm] = useState({
+export default function LandingPage() {
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanInfo | null>(null);
+  const [loginData, setLoginData] = useState({ email: '', password: '' });
+  const [purchaseData, setPurchaseData] = useState<PurchaseFormData>({
     email: '',
-    name: '',
+    fullName: '',
     company: '',
     phone: '',
   });
-  const [purchaseError, setPurchaseError] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  // Login form state
-  const [loginForm, setLoginForm] = useState({
-    email: '',
-    password: '',
-  });
-  const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [purchaseError, setPurchaseError] = useState('');
+  const [isProcessingPurchase, setIsProcessingPurchase] = useState(false);
 
-  // ============================================
-  // PURCHASE FLOW
-  // ============================================
+  const openLoginModal = () => setIsLoginModalOpen(true);
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+    setLoginError('');
+  };
 
   const openPurchaseModal = (plan: PlanInfo) => {
     setSelectedPlan(plan);
-    setPurchaseForm({ email: '', name: '', company: '', phone: '' });
-    setPurchaseError(null);
-    setShowPurchaseModal(true);
+    setIsPurchaseModalOpen(true);
+    setPurchaseError('');
   };
-
   const closePurchaseModal = () => {
-    setShowPurchaseModal(false);
+    setIsPurchaseModalOpen(false);
     setSelectedPlan(null);
-    setPurchaseForm({ email: '', name: '', company: '', phone: '' });
-    setPurchaseError(null);
+    setPurchaseError('');
   };
 
-  const handlePurchaseSubmit = async (e: React.FormEvent) => {
+  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLoginData({ ...loginData, [e.target.name]: e.target.value });
+  };
+
+  const handlePurchaseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPurchaseData({ ...purchaseData, [e.target.name]: e.target.value });
+  };
+
+  const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setPurchaseError(null);
+    setIsLoggingIn(true);
+    setLoginError('');
 
-    // Validation
-    if (!purchaseForm.email || !purchaseForm.name) {
-      setPurchaseError('Email and name are required.');
-      return;
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginData.email,
+      password: loginData.password,
+    });
+
+    if (error) {
+      setLoginError(error.message);
+    } else {
+      closeLoginModal();
     }
+    setIsLoggingIn(false);
+  };
 
-    if (!purchaseForm.email.includes('@')) {
-      setPurchaseError('Please enter a valid email address.');
-      return;
-    }
+  const handlePurchaseSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!selectedPlan) return;
 
-    if (!selectedPlan) {
-      setPurchaseError('No plan selected.');
-      return;
-    }
-
-    setIsProcessing(true);
+    setIsProcessingPurchase(true);
+    setPurchaseError('');
 
     try {
-      // Step 1: Create user account in Supabase Auth
-      // We assume a 'companies' table exists and a 'profiles' table with a 'company_id' foreign key.
-      const companyName = purchaseForm.company || purchaseForm.name + "'s Company";
-      
-// 1a: Create or get Company ID (Simplified for client-side, ideally this is an API call)
-	// **MULTI-TENANCY NOTE**: The current implementation is a client-side placeholder.
-	// For a production app, this logic should be moved to a Supabase Edge Function
-	// to securely create the company record and assign the company_id to the user's profile.
-	const companyIdentifier = companyName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-	
-	// FIX: Ensure companyIdentifier is a string, not a number, for metadata
-	const companyIdString = String(companyIdentifier);
+      // 1. Create a temporary password for the new user
+      const tempPassword = Math.random().toString(36).slice(-8);
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: purchaseForm.email,
-        password: Math.random().toString(36).slice(-12), // Generate temporary password
+      // 2. Sign up the user in Supabase
+      // NOTE: Supabase will send a confirmation email. The user will need to use the "Forgot Password" flow after confirming.
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: purchaseData.email,
+        password: tempPassword,
         options: {
           data: {
-            name: purchaseForm.name,
-            company: companyName,
-            company_id: companyIdString, // Placeholder for multi-tenancy
-            phone: purchaseForm.phone,
-            plan: selectedPlan.id,
+            full_name: purchaseData.fullName,
+            company_name: purchaseData.company,
+            phone: purchaseData.phone,
+            // Multi-Tenancy Logic: The company name is used as a unique identifier for the company_id logic
+            // NOTE: This assumes your backend logic will create a 'company' record and link the user.
+            // This is a placeholder for a more robust multi-tenancy setup.
+            company_identifier: purchaseData.company.toLowerCase().replace(/\s/g, '-'),
           },
         },
       });
 
-      if (authError) {
-        // If user already exists, that's okay - we'll still proceed to checkout
-        if (!authError.message.includes('already registered')) {
-          throw authError;
-        }
-      }
-
-// Step 2: Ensure user is not logged in before redirecting to Stripe
-	// The sign-up should not auto-login. If it does, the user will be logged out by the next step.
-	// We will rely on the instant redirect to Stripe to prevent the app from loading.
-
-      // Step 3: Redirect to Stripe checkout
-      await startStripeCheckout(selectedPlan.priceId, purchaseForm.email);
-      // Note: startStripeCheckout redirects the page, so code after this won't execute
-    } catch (err: any) {
-      console.error('Error during purchase:', err);
-      const errorMessage = err?.message || 'An unexpected error occurred. Please try again.';
-      setPurchaseError(errorMessage);
-      setIsProcessing(false);
-    }
-  };
-
-  // ============================================
-  // LOGIN FLOW
-  // ============================================
-
-  const openLoginModal = () => {
-    setLoginForm({ email: '', password: '' });
-    setLoginError(null);
-    setShowLoginModal(true);
-  };
-
-  const closeLoginModal = () => {
-    setShowLoginModal(false);
-    setLoginForm({ email: '', password: '' });
-    setLoginError(null);
-  };
-
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError(null);
-
-    if (!loginForm.email || !loginForm.password) {
-      setLoginError('Email and password are required.');
-      return;
-    }
-
-    setIsLoggingIn(true);
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: loginForm.email,
-        password: loginForm.password,
-      });
-
-      if (error) {
-        setLoginError(error.message);
-        setIsLoggingIn(false);
+      if (signUpError) {
+        setPurchaseError(signUpError.message);
+        setIsProcessingPurchase(false);
         return;
       }
 
-      // Reload to let App.tsx pick up the new session
-      window.location.reload();
-    } catch (err: any) {
-      setLoginError(err?.message || 'Unexpected error logging in.');
-      setIsLoggingIn(false);
+      // 3. Redirect to Stripe Checkout
+      // NOTE: The user is NOT logged in at this point, which prevents the app from loading and allows the redirect.
+      await startStripeCheckout(selectedPlan.priceId, purchaseData.email);
+
+      // The function above redirects the browser, so the code below is unreachable.
+    } catch (error) {
+      console.error('Purchase error:', error);
+      setPurchaseError('Unable to start checkout. Please try again.');
+      setIsProcessingPurchase(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      {/* ============================================ */}
-      {/* PURCHASE MODAL */}
-      {/* ============================================ */}
-      {showPurchaseModal && selectedPlan && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm"
-          onClick={closePurchaseModal}
-        >
-          <div
-            className="bg-white rounded-3xl p-8 md:p-10 max-w-md w-full shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-2xl md:text-3xl font-black mb-2 text-center text-gray-900">
-              {selectedPlan.name}
-            </h2>
-            <p className="text-center text-gray-600 mb-6">
-              ${selectedPlan.price}/month
-            </p>
-
-            <form onSubmit={handlePurchaseSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={purchaseForm.email}
-                  onChange={(e) =>
-                    setPurchaseForm({ ...purchaseForm, email: e.target.value })
-                  }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
-                  placeholder="you@example.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={purchaseForm.name}
-                  onChange={(e) =>
-                    setPurchaseForm({ ...purchaseForm, name: e.target.value })
-                  }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
-                  placeholder="John Doe"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Company
-                </label>
-                <input
-                  type="text"
-                  value={purchaseForm.company}
-                  onChange={(e) =>
-                    setPurchaseForm({ ...purchaseForm, company: e.target.value })
-                  }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
-                  placeholder="Your Company"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  value={purchaseForm.phone}
-                  onChange={(e) =>
-                    setPurchaseForm({ ...purchaseForm, phone: e.target.value })
-                  }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
-                  placeholder="(555) 123-4567"
-                />
-              </div>
-
-              {purchaseError && (
-                <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-                  <p className="text-sm text-red-700">{purchaseError}</p>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={closePurchaseModal}
-                  className="flex-1 py-3 rounded-xl border-2 border-gray-300 font-bold text-gray-700 hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className={`flex-1 py-3 rounded-xl font-bold text-white text-lg transition ${
-                    selectedPlan.buttonColor
-                  } ${selectedPlan.buttonHoverColor} ${
-                    isProcessing ? 'opacity-60 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {isProcessing ? 'Processing...' : 'Complete Order'}
-                </button>
-              </div>
-            </form>
-
-            <p className="text-xs text-gray-500 text-center mt-4">
-              You'll be redirected to Stripe to securely complete your payment.
-            </p>
-          </div>
-        </div>
-      )}
-
+    <div className="min-h-screen bg-white">
       {/* ============================================ */}
       {/* LOGIN MODAL */}
       {/* ============================================ */}
-      {showLoginModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm"
-          onClick={closeLoginModal}
-        >
-          <div
-            className="bg-white rounded-3xl p-8 md:p-10 max-w-md w-full shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-2xl md:text-3xl font-black mb-2 text-center text-gray-900">
-              Login
-            </h2>
-            <p className="text-center text-gray-600 mb-6 text-sm">
-              Enter your credentials to access your account
-            </p>
-
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email
-                </label>
+      {isLoginModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-8">
+            <h2 className="text-3xl font-black mb-6 text-gray-900">Welcome Back</h2>
+            <form onSubmit={handleLoginSubmit}>
+              <div className="space-y-4 mb-6">
                 <input
                   type="email"
+                  name="email"
+                  placeholder="Email"
+                  value={loginData.email}
+                  onChange={handleLoginChange}
                   required
-                  value={loginForm.email}
-                  onChange={(e) =>
-                    setLoginForm({ ...loginForm, email: e.target.value })
-                  }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
-                  placeholder="you@example.com"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Password
-                </label>
                 <input
                   type="password"
+                  name="password"
+                  placeholder="Password"
+                  value={loginData.password}
+                  onChange={handleLoginChange}
                   required
-                  value={loginForm.password}
-                  onChange={(e) =>
-                    setLoginForm({ ...loginForm, password: e.target.value })
-                  }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
-                  placeholder="••••••••"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition"
                 />
               </div>
 
@@ -424,6 +207,86 @@ const LandingPage: React.FC = () => {
                   {isLoggingIn ? 'Logging in...' : 'Login'}
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* PURCHASE MODAL */}
+      {/* ============================================ */}
+      {isPurchaseModalOpen && selectedPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-8">
+            <div className="text-center mb-6">
+              <h2 className="text-3xl font-black text-gray-900">{selectedPlan.name}</h2>
+              <p className="text-xl text-gray-600">${selectedPlan.price}/month</p>
+            </div>
+            <form onSubmit={handlePurchaseSubmit}>
+              <div className="space-y-4 mb-6">
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Email *"
+                  value={purchaseData.email}
+                  onChange={handlePurchaseChange}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition"
+                />
+                <input
+                  type="text"
+                  name="fullName"
+                  placeholder="Full Name *"
+                  value={purchaseData.fullName}
+                  onChange={handlePurchaseChange}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition"
+                />
+                <input
+                  type="text"
+                  name="company"
+                  placeholder="Company"
+                  value={purchaseData.company}
+                  onChange={handlePurchaseChange}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition"
+                />
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="Phone"
+                  value={purchaseData.phone}
+                  onChange={handlePurchaseChange}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition"
+                />
+              </div>
+
+              {purchaseError && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 mb-4">
+                  <p className="text-sm text-red-700">{purchaseError}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closePurchaseModal}
+                  className="flex-1 py-3 rounded-xl border-2 border-gray-300 font-bold text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProcessingPurchase}
+                  className={`flex-1 py-3 rounded-xl font-bold text-white text-lg bg-blue-600 hover:bg-blue-700 transition ${
+                    isProcessingPurchase ? 'opacity-60 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isProcessingPurchase ? 'Processing...' : 'Complete Order'}
+                </button>
+              </div>
+              <p className="text-xs text-center text-gray-500 mt-3">
+                You'll be redirected to Stripe to securely complete your payment.
+              </p>
             </form>
           </div>
         </div>
@@ -474,11 +337,11 @@ const LandingPage: React.FC = () => {
       {/* ============================================ */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-white">
         <div className="max-w-7xl mx-auto space-y-20 md:space-y-32">
-          {/* Feature 1 */}
+          {/* Feature 1: EOD Report */}
           <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
             <img
-           src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663033216620/ixKXRwlQLvplwOFZ.jpg"
-              alt="AI Image Generation"
+              src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663033216620/uGojrZQFwEYwfaXX.jpg"
+              alt="End of Day Report"
               className="rounded-3xl shadow-lg border border-gray-200 object-cover w-full h-full"
             />
             <div>
@@ -491,7 +354,7 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Feature 2 */}
+          {/* Feature 2: Revenue Center */}
           <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
             <div>
               <h3 className="text-3xl md:text-4xl font-black mb-4 text-gray-900">
@@ -502,13 +365,13 @@ const LandingPage: React.FC = () => {
               </p>
             </div>
             <img
-         src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663033216620/HAJnAsRVWQxIpIei.jpg"
+              src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663033216620/HAJnAsRVWQxIpIei.jpg"
               alt="Revenue Center"
               className="rounded-3xl shadow-lg border border-gray-200 object-cover w-full h-full"
             />
           </div>
 
-          {/* Feature 3 */}
+          {/* Feature 3: New Clients List */}
           <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
             <img
               src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663033216620/TKIMNfRJfmBDifrH.jpg"
@@ -525,7 +388,7 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Feature 4 */}
+          {/* Feature 4: Performance Dashboard */}
           <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
             <div>
               <h3 className="text-3xl md:text-4xl font-black mb-4 text-gray-900">
@@ -536,13 +399,13 @@ const LandingPage: React.FC = () => {
               </p>
             </div>
             <img
-         src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663033216620/PRyIpAjeiuhiPTeR.jpg"
+              src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663033216620/PRyIpAjeiuhiPTeR.jpg"
               alt="Performance Dashboard"
               className="rounded-3xl shadow-lg border border-gray-200 object-cover w-full h-full"
             />
           </div>
 
-          {/* Feature 5 */}
+          {/* Feature 5: Prospecting List */}
           <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
             <img
               src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663033216620/FkVOuvmuxkkghaMP.jpg"
@@ -559,7 +422,7 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Feature 6 */}
+          {/* Feature 6: AI Image Generation */}
           <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
             <div>
               <h3 className="text-3xl md:text-4xl font-black mb-4 text-gray-900">
@@ -598,57 +461,80 @@ const LandingPage: React.FC = () => {
               </p>
               <div className="text-4xl md:text-5xl font-black mb-8 text-gray-900">
                 ${PLANS.solo.price}
-                <span className="text-lg md:text-xl text-gray-500">/mth</span>
+                <span className="text-xl font-medium text-gray-500">/month</span>
               </div>
-              <ul className="text-left space-y-3 text-sm md:text-base text-gray-700 mb-8 flex-grow">
-                {PLANS.solo.features.map((feature, idx) => (
-                  <li key={idx} className="flex gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
-                    <span>{feature}</span>
+              <ul className="space-y-3 mb-10 flex-grow">
+                {PLANS.solo.features.map((feature, index) => (
+                  <li key={index} className="flex items-center text-gray-700">
+                    <svg
+                      className="w-5 h-5 text-green-500 mr-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M5 13l4 4L19 7"
+                      ></path>
+                    </svg>
+                    {feature}
                   </li>
                 ))}
               </ul>
               <button
                 onClick={() => openPurchaseModal(PLANS.solo)}
-                className="w-full py-4 md:py-5 rounded-2xl bg-blue-600 text-lg md:text-xl font-bold text-white hover:bg-blue-700 transition"
+                className="mt-auto py-4 rounded-xl font-bold text-lg text-white bg-blue-600 hover:bg-blue-700 transition shadow-lg"
               >
-                Start Solo
+                Get Started
               </button>
             </div>
 
-            {/* Team Plan (Most Popular) */}
-            <div className="relative bg-gradient-to-br from-blue-50 to-blue-100 rounded-3xl pt-16 md:pt-20 pb-8 md:pb-12 px-8 md:px-10 border-4 border-blue-500 shadow-2xl flex flex-col">
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 md:px-8 py-2 md:py-3 rounded-full font-bold text-sm md:text-base">
-                MOST POPULAR
-              </div>
+            {/* Team Plan (Highlighted) */}
+            <div className="bg-white rounded-3xl p-8 md:p-10 border-4 border-blue-600 shadow-2xl flex flex-col">
               <h3 className="text-2xl md:text-3xl font-black mb-3 text-gray-900">
                 {PLANS.team.name}
               </h3>
-              <p className="text-base md:text-lg text-gray-700 mb-6">
+              <p className="text-base md:text-lg text-gray-600 mb-6">
                 {PLANS.team.description}
               </p>
-              <div className="text-5xl md:text-6xl font-black mb-8 text-gray-900">
+              <div className="text-4xl md:text-5xl font-black mb-8 text-gray-900">
                 ${PLANS.team.price}
-                <span className="text-xl md:text-2xl text-gray-600">/mth</span>
+                <span className="text-xl font-medium text-gray-500">/month</span>
               </div>
-              <ul className="text-left space-y-3 text-sm md:text-base text-gray-700 mb-8 flex-grow">
-                {PLANS.team.features.map((feature, idx) => (
-                  <li key={idx} className="flex gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
-                    <span>{feature}</span>
+              <ul className="space-y-3 mb-10 flex-grow">
+                {PLANS.team.features.map((feature, index) => (
+                  <li key={index} className="flex items-center text-gray-700">
+                    <svg
+                      className="w-5 h-5 text-green-500 mr-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M5 13l4 4L19 7"
+                      ></path>
+                    </svg>
+                    {feature}
                   </li>
                 ))}
               </ul>
               <button
                 onClick={() => openPurchaseModal(PLANS.team)}
-                className="w-full py-5 md:py-6 rounded-2xl bg-blue-600 text-lg md:text-2xl font-black text-white shadow-lg hover:bg-blue-700 transition"
+                className="mt-auto py-4 rounded-xl font-bold text-lg text-white bg-blue-600 hover:bg-blue-700 transition shadow-lg"
               >
-                Start Team Now
+                Get Started
               </button>
             </div>
 
             {/* Elite Plan */}
-            <div className="bg-white rounded-3xl p-8 md:p-10 border-2 border-gray-200 hover:border-green-400 transition flex flex-col">
+            <div className="bg-white rounded-3xl p-8 md:p-10 border-2 border-gray-200 hover:border-blue-400 transition flex flex-col">
               <h3 className="text-2xl md:text-3xl font-black mb-3 text-gray-900">
                 {PLANS.elite.name}
               </h3>
@@ -657,21 +543,34 @@ const LandingPage: React.FC = () => {
               </p>
               <div className="text-4xl md:text-5xl font-black mb-8 text-gray-900">
                 ${PLANS.elite.price}
-                <span className="text-lg md:text-xl text-gray-500">/mth</span>
+                <span className="text-xl font-medium text-gray-500">/month</span>
               </div>
-              <ul className="text-left space-y-3 text-sm md:text-base text-gray-700 mb-8 flex-grow">
-                {PLANS.elite.features.map((feature, idx) => (
-                  <li key={idx} className="flex gap-2">
-                    <span className="text-green-600 font-bold">•</span>
-                    <span>{feature}</span>
+              <ul className="space-y-3 mb-10 flex-grow">
+                {PLANS.elite.features.map((feature, index) => (
+                  <li key={index} className="flex items-center text-gray-700">
+                    <svg
+                      className="w-5 h-5 text-green-500 mr-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M5 13l4 4L19 7"
+                      ></path>
+                    </svg>
+                    {feature}
                   </li>
                 ))}
               </ul>
               <button
                 onClick={() => openPurchaseModal(PLANS.elite)}
-                className="w-full py-4 md:py-5 rounded-2xl bg-green-600 text-lg md:text-xl font-bold text-white hover:bg-green-700 transition"
+                className="mt-auto py-4 rounded-xl font-bold text-lg text-white bg-blue-600 hover:bg-blue-700 transition shadow-lg"
               >
-                Apply for Elite
+                Get Started
               </button>
             </div>
           </div>
@@ -681,14 +580,13 @@ const LandingPage: React.FC = () => {
       {/* ============================================ */}
       {/* FOOTER */}
       {/* ============================================ */}
-      <footer className="py-12 md:py-20 text-center text-gray-600 bg-white border-t border-gray-200">
-        <p className="text-lg md:text-2xl font-bold text-gray-900">© 2025 TrueXpanse</p>
-        <p className="mt-3 md:mt-4 text-base md:text-lg">
-          Massive Action Tracker • Built to help you win
-        </p>
+      <footer className="py-12 md:py-16 bg-gray-800 text-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
+          <p className="text-sm text-gray-400">
+            &copy; {new Date().getFullYear()} TRUEXPANS. All rights reserved.
+          </p>
+        </div>
       </footer>
     </div>
   );
-};
-
-export default LandingPage;
+}
