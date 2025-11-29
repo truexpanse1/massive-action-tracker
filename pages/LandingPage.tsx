@@ -137,10 +137,13 @@ const LandingPage: React.FC = () => {
       const companyName = purchaseForm.company || purchaseForm.name + "'s Company";
       
 // 1a: Create or get Company ID (Simplified for client-side, ideally this is an API call)
-	      // **MULTI-TENANCY NOTE**: The current implementation is a client-side placeholder.
-	      // For a production app, this logic should be moved to a Supabase Edge Function
-	      // to securely create the company record and assign the company_id to the user's profile.
-	      const companyIdentifier = companyName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+	// **MULTI-TENANCY NOTE**: The current implementation is a client-side placeholder.
+	// For a production app, this logic should be moved to a Supabase Edge Function
+	// to securely create the company record and assign the company_id to the user's profile.
+	const companyIdentifier = companyName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+	
+	// FIX: Ensure companyIdentifier is a string, not a number, for metadata
+	const companyIdString = String(companyIdentifier);
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: purchaseForm.email,
@@ -149,7 +152,7 @@ const LandingPage: React.FC = () => {
           data: {
             name: purchaseForm.name,
             company: companyName,
-            company_id: companyIdentifier, // Placeholder for multi-tenancy
+            company_id: companyIdString, // Placeholder for multi-tenancy
             phone: purchaseForm.phone,
             plan: selectedPlan.id,
           },
