@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { startStripeCheckout } from '../services/billingService';
 
-// Stripe Price IDs - Update these with your actual price IDsconst SOLO_PRICE_ID = 'price_1SVlc7AF9E77pmGU1ZadSw1A';   // $39 Solo Closer
+// Stripe Price IDs - Update these with your actual price IDs
+const SOLO_PRICE_ID = 'price_1SVlc7AF9E77pmGU1ZadSw1A';   // $39 Solo Closer
 const TEAM_PRICE_ID = 'price_1SVIo3AF9E77pmGUWmOiZw0';   // $149 Team Engine
 const ELITE_PRICE_ID = 'price_1SVIo3AF9E77pmGUVxM0u4z1'; // $399 Elite / Company plan
 
