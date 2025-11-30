@@ -27,6 +27,7 @@ export interface User {
   email: string;
   role: Role;
   status: UserStatus;
+  company_id?: string;
   password?: string;
 }
 

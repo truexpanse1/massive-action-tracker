@@ -296,6 +296,7 @@ const App: React.FC = () => {
       .upsert(
         {
           user_id: userIdForDb,
+          company_id: user.company_id,
           date: dateKey,
           data: dataForDb,
         },
@@ -325,6 +326,7 @@ const App: React.FC = () => {
           .upsert(
             {
               user_id: userIdForDb,
+              company_id: user.company_id,
               date: dateKey,
               data: dataForDb,
             },
@@ -345,6 +347,7 @@ const App: React.FC = () => {
     if (!user) return null;
     const payload = {
       user_id: user.id,
+      company_id: user.company_id,
       name: leadData.name,
       company: leadData.company,
       date: leadData.date,
@@ -418,6 +421,7 @@ const App: React.FC = () => {
       close_date: clientData.closeDate,
       stage: clientData.stage,
       user_id: clientData.userId,
+      company_id: user.company_id,
     };
     if (String(clientData.id).startsWith('manual-')) {
       const { data, error } = await supabase
@@ -470,6 +474,7 @@ const App: React.FC = () => {
     if (!user) throw new Error('User not authenticated');
     const payload = {
       user_id: user.id,
+      company_id: user.company_id,
       date: transData.date,
       client_name: transData.clientName,
       product: transData.product,
@@ -535,7 +540,7 @@ const App: React.FC = () => {
     if (!user) return;
     const { data, error } = await supabase
       .from('quotes')
-      .insert({ ...quoteData, user_id: user.id })
+      .insert({ ...quoteData, user_id: user.id, company_id: user.company_id })
       .select()
       .single();
     if (data)
