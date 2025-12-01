@@ -193,7 +193,25 @@ export const getQuotesForPerson = async (person: string): Promise<Omit<Quote, 'i
             contents: `Provide 5 famous quotes by ${person}.`,
             config: {
                 responseMimeType: 'application/json',
-                responseSchema: { type: Type.OBJECT, properties: { quotes: { type: Type.STRING }, author: { type: Type.STRING } }, required: ['text', 'author'] } }, required: ['quotes'] },
+                // --- THIS IS THE CORRECTED SCHEMA ---
+                responseSchema: { 
+                    type: Type.OBJECT, 
+                    properties: { 
+                        quotes: { 
+                            type: Type.ARRAY, 
+                            items: { 
+                                type: Type.OBJECT, 
+                                properties: { 
+                                    text: { type: Type.STRING }, 
+                                    author: { type: Type.STRING } 
+                                }, 
+                                required: ['text', 'author'] 
+                            } 
+                        } 
+                    }, 
+                    required: ['quotes'] 
+                },
+                // ------------------------------------
             },
         });
         const parsed = parseJsonResponse<{ quotes: Omit<Quote, 'id'>[] }>(response.text, { quotes: [] });
