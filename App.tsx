@@ -188,7 +188,73 @@ const App: React.FC = () => {
     setWinMessage(message);
     setShowConfetti(true);
   };
-
+const handleAddHotLead = async (
+leadData: Omit<Contact, 'id'>
+): Promise<Contact | null> => {
+if (!user || !user.company_id) {
+alert('User profile data is incomplete. Please log out and log back in.');
+return null;
+}
+const payload = {
+user_id: user.id,
+company_id: user.company_id,
+name: leadData.name,
+company: leadData.company,
+date: leadData.date,
+phone: leadData.phone,
+email: leadData.email,
+interest_level: leadData.interestLevel,
+prospecting: leadData.prospecting,
+date_added: leadData.dateAdded,
+appointment_date: leadData.appointmentDate,
+completed_follow_ups: leadData.completedFollowUps,
+};
+const { data, error } = await supabase
+.from('hot_leads')
+.insert(payload)
+.select()
+.single();
+if (error) {
+console.error('Error adding hot lead:', error);
+alert('Failed to add lead. Check console for details. This is often an RLS or permission issue: ' + error.message);
+return null;
+}
+const newLead: Contact = {
+...data,
+id: String(data.id),
+interestLevel: data.interest_level,
+dateAdded: data.date_added,
+appointmentDate: data.appointment_date,
+completedFollowUps: data.completed_follow_ups,
+userId: data.user_id,
+};
+setHotLeads((prev) => [...prev, newLead]);
+return newLead;
+};
+  const handleUpdateHotLead = async (lead: Contact) => {
+setHotLeads((prev) => prev.map((l) => (l.id === lead.id ? lead : l)));
+if (!user) return;
+await supabase
+.from('hot_leads')
+.update({
+name: lead.name,
+company: lead.company,
+date: lead.date,
+phone: lead.phone,
+email: lead.email,
+interest_level: lead.interestLevel,
+prospecting: lead.prospecting,
+date_added: lead.dateAdded,
+appointment_date: lead.appointmentDate,
+completed_follow_ups: lead.completedFollowUps,
+})
+.eq('id', lead.id);
+};
+  const handleDeleteHotLead = async (leadId: string) => {
+setHotLeads((prev) => prev.filter((l) => l.id !== leadId));
+if (!user) return;
+await supabase.from('hot_leads').delete().eq('id', leadId);
+};
   // ... (all your other handlers stay exactly the same – no changes needed)
   // I'm keeping them short here for brevity, but they are 100% unchanged from your original
 
@@ -202,8 +268,7 @@ const App: React.FC = () => {
     }, {});
 
     switch (view) {
-      case 'day-view': return <DayView user={user!} onDataChange={handleUpsertDayData} allData={allData} selectedDate={selectedDate} onDateChange={setSelectedDate} onAddWin={handleAddWin} onAddHotLead={() => {}} onUpdateHotLead={() => {}} hotLeads={hotLeads} transactions={transactions} users={users} onNavigateToRevenue={() => {}} />;
-      // ... all other cases exactly as you had them
+case 'day-view': return <DayView user={user!} onDataChange={handleUpsertDayData} allData={allData} selectedDate={selectedDate} onDateChange={setSelectedDate} onAddWin={handleAddWin} onAddHotLead={handleAddHotLead} onUpdateHotLead={handleUpdateHotLead} hotLeads={hotLeads} transactions={transactions} users={users} onNavigateToRevenue={() => {}} />;      // ... all other cases exactly as you had them
       default: return <div>View not found</div>;
     }
   };
