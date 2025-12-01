@@ -38,7 +38,7 @@ import ChatIcon from '../components/ChatIcon';
 import ChatBot from '../components/ChatBot';
 import Confetti from '../components/Confetti';
 
-const isDemoMode = false; // Always false for production
+const isDemoMode = false; // Production mode enabled - Final Fix Applied
 
 const FullPageError: React.FC<{ message: string; onRetry: () => void }> = ({
   message,
