@@ -261,8 +261,8 @@ export const searchBooksByAuthor = async (author: string): Promise<Book[]> => {
             contents: `List up to 3 major books by ${author}. Include title, author, a one-sentence description, and placeholder links for Amazon and iBooks.`,
             config: {
                 responseMimeType: 'application/json',
-                responseSchema: { type: Type.OBJECT, properties: { books: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, author: { type: Type.STRING }, description: { type: Type.STRING }, amazonLink: { type: Type.STRING }, ibooksLink: { type: Type.STRING } }, required: ['title', 'author', 'description', 'amazonLink', 'ibooksLink'] } } }, required: ['books'] } },
-            },
+                responseSchema: { type: Type.OBJECT, properties: { books: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, author: { type: Type.STRING }, description: { type: Type.STRING }, amazonLink: { type: Type.STRING }, ibooksLink: { type: Type.STRING } }, required: ['title', 'author', 'description', 'amazonLink', 'ibooksLink'] } } }, required: ['books'] }
+            }, // <-- The extra '}' has been removed here.
         });
         const parsed = parseJsonResponse<{ books: Book[] }>(response.text, { books: [] });
         return parsed.books;
