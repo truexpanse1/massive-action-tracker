@@ -1,5 +1,3 @@
-
-
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Quote, Book } from '../types';
 
@@ -92,12 +90,31 @@ export const getProductsForIndustry = async (industry: string): Promise<string[]
     }
 };
 
+/**
+ * CORRECTED: Uses 'imagen-3.0-generate-002' and maps aspect ratio to pixel size.
+ */
 export const generateImage = async (prompt: string, aspectRatio: string): Promise<string> => {
+    // Map the frontend aspect ratio string to the required Imagen API format
+    const dimensionsMap: Record<string, string> = {
+        '1:1': '1024x1024',
+        '16:9': '1792x1024',
+        '9:16': '1024x1792',
+        '4:3': '1344x1024',
+        '3:4': '1024x1344',
+    };
+    
+    const size = dimensionsMap[aspectRatio] || '1024x1024';
+    
     try {
         const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
+            model: 'imagen-3.0-generate-002', 
             prompt,
-            config: { numberOfImages: 1, outputMimeType: 'image/jpeg', aspectRatio },
+            config: { 
+                numberOfImages: 1, 
+                outputMimeType: 'image/jpeg', 
+                aspectRatio: size, 
+                style: "PHOTOREALISM"
+            },
         });
         const base64ImageBytes = response.generatedImages[0].image.imageBytes;
         return `data:image/jpeg;base64,${base64ImageBytes}`;
@@ -107,25 +124,38 @@ export const generateImage = async (prompt: string, aspectRatio: string): Promis
     }
 };
 
+/**
+ * CORRECTED: Uses 'imagen-3.0-generate-002' endpoint and passes image data as sourceImage for editing.
+ */
 export const editImage = async (base64ImageData: string, mimeType: string, prompt: string): Promise<string> => {
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ inlineData: { data: base64ImageData, mimeType } }, { text: prompt }] },
-            config: { responseModalities: [Modality.IMAGE] },
+        // Extract the base64 data only from the full Data URL
+        const base64DataOnly = base64ImageData.split(',')[1];
+
+        const response = await ai.models.generateImages({
+            model: 'imagen-3.0-generate-002', 
+            prompt: prompt,
+            config: {
+                numberOfImages: 1,
+                outputMimeType: 'image/jpeg',
+                sourceImage: {
+                    imageBytes: base64DataOnly,
+                    mimeType: mimeType,
+                },
+            },
         });
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-                return `data:image/png;base64,${part.inlineData.data}`;
-            }
-        }
-        throw new Error("No image was returned from the editImage call.");
+
+        const base64ImageBytes = response.generatedImages[0].image.imageBytes;
+        return `data:image/jpeg;base64,${base64ImageBytes}`;
     } catch (error) {
         console.error('Error editing image:', error);
         throw error;
     }
 };
 
+/**
+ * RETAINED: Uses gemini-2.5-flash for the vision-to-text task (suggestion).
+ */
 export const getEditSuggestion = async (base64ImageData: string, mimeType: string): Promise<string> => {
     try {
         const response = await ai.models.generateContent({
@@ -163,7 +193,7 @@ export const getQuotesForPerson = async (person: string): Promise<Omit<Quote, 'i
             contents: `Provide 5 famous quotes by ${person}.`,
             config: {
                 responseMimeType: 'application/json',
-                responseSchema: { type: Type.OBJECT, properties: { quotes: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING }, author: { type: Type.STRING } }, required: ['text', 'author'] } } }, required: ['quotes'] },
+                responseSchema: { type: Type.OBJECT, properties: { quotes: { type: Type.STRING }, author: { type: Type.STRING } }, required: ['text', 'author'] } }, required: ['quotes'] },
             },
         });
         const parsed = parseJsonResponse<{ quotes: Omit<Quote, 'id'>[] }>(response.text, { quotes: [] });
@@ -181,7 +211,7 @@ export const getRecommendedBooks = async (): Promise<Book[]> => {
             contents: 'List the top 5 most impactful books for sales professionals. Include title, author, a one-sentence description, and placeholder links for Amazon and iBooks.',
             config: {
                 responseMimeType: 'application/json',
-                responseSchema: { type: Type.OBJECT, properties: { books: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, author: { type: Type.STRING }, description: { type: Type.STRING }, amazonLink: { type: Type.STRING }, ibooksLink: { type: Type.STRING } }, required: ['title', 'author', 'description', 'amazonLink', 'ibooksLink'] } } }, required: ['books'] },
+                responseSchema: { type: Type.OBJECT, properties: { books: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, author: { type: Type.STRING }, description: { type: Type.STRING }, amazonLink: { type: Type.STRING }, ibooksLink: { type: Type.STRING } }, required: ['title', 'author', 'description', 'amazonLink', 'ibooksLink'] } } }, required: ['books'] } },
             },
         });
         const parsed = parseJsonResponse<{ books: Book[] }>(response.text, { books: [] });
@@ -213,7 +243,7 @@ export const searchBooksByAuthor = async (author: string): Promise<Book[]> => {
             contents: `List up to 3 major books by ${author}. Include title, author, a one-sentence description, and placeholder links for Amazon and iBooks.`,
             config: {
                 responseMimeType: 'application/json',
-                responseSchema: { type: Type.OBJECT, properties: { books: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, author: { type: Type.STRING }, description: { type: Type.STRING }, amazonLink: { type: Type.STRING }, ibooksLink: { type: Type.STRING } }, required: ['title', 'author', 'description', 'amazonLink', 'ibooksLink'] } } }, required: ['books'] },
+                responseSchema: { type: Type.OBJECT, properties: { books: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, author: { type: Type.STRING }, description: { type: Type.STRING }, amazonLink: { type: Type.STRING }, ibooksLink: { type: Type.STRING } }, required: ['title', 'author', 'description', 'amazonLink', 'ibooksLink'] } } }, required: ['books'] } },
             },
         });
         const parsed = parseJsonResponse<{ books: Book[] }>(response.text, { books: [] });
