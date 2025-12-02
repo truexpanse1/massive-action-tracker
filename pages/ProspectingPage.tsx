@@ -212,9 +212,10 @@ const ProspectingPage: React.FC<ProspectingPageProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* LEFT COLUMN – slightly narrowed on large screens */}
-      <div className="space-y-8 lg:max-w-xs">
+    {/* 👇 NEW GRID LAYOUT: fixed 280px left column, rest goes to the table, smaller gap */}
+    <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6">
+      {/* LEFT COLUMN – calendar + KPIs + quick actions */}
+      <div className="space-y-8">
         <Calendar selectedDate={selectedDate} onDateChange={onDateChange} />
         <ProspectingKPIs
           contacts={currentData.prospectingContacts}
@@ -227,7 +228,7 @@ const ProspectingPage: React.FC<ProspectingPageProps> = ({
       </div>
 
       {/* RIGHT COLUMN – Prospecting table */}
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-1">
         <div className="bg-brand-light-card dark:bg-brand-navy p-4 rounded-lg border border-brand-light-border dark:border-brand-gray h-full">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-brand-light-text dark:text-white">
